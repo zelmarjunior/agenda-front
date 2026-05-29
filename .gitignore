@@ -55,5 +55,8 @@ next-env.d.ts
 .vscode/settings.json
 .vscode/launch.json
 
+# Claude Code — configurações locais (paths absolutos, permissões pessoais)
+.claude/settings.local.json
+
 # OS
 Thumbs.db
