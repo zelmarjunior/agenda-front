@@ -1,0 +1,93 @@
+{
+  "project": {
+    "name": "agenda-front",
+    "description": "Frontend da plataforma de agendamento para salões de beleza",
+    "type": "frontend-nextjs-react",
+    "version": "0.0.1"
+  },
+  "speckit": {
+    "enabled": true,
+    "version": "1.0.0",
+    "specsPath": "./specs",
+    "constitutionPath": "./.specify/memory/constitution.md",
+    "templatesPath": "./.specify/templates",
+    "currentFeature": "001-salon-scheduling-platform",
+    "phases": ["setup", "architecture", "features", "polish"]
+  },
+  "backend": {
+    "type": "nestjs",
+    "repoPath": "../../agenda-back",
+    "apiUrl": "http://localhost:3000/api/v1",
+    "openApiPath": "../../agenda-back/specs/001-salon-scheduling-platform/contracts/openapi.yml",
+    "constitutionPath": "../../agenda-back/.specify/memory/constitution.md"
+  },
+  "typescript": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "testing": {
+    "framework": "vitest",
+    "componentTesting": "react-testing-library",
+    "e2eTesting": "playwright",
+    "coverage": {
+      "target": 70,
+      "critical": 80,
+      "includes": ["src/**/*.ts", "src/**/*.tsx"],
+      "excludes": ["*.spec.ts", "*.test.ts", "*.d.ts", "src/app"]
+    }
+  },
+  "performance": {
+    "fcp": "< 2s",
+    "lcp": "< 3s",
+    "bundleSize": "< 200KB",
+    "lighthouseScore": ">= 80"
+  },
+  "accessibility": {
+    "standard": "WCAG 2.1",
+    "level": "AA",
+    "mobileFirst": true,
+    "breakpoints": {
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px",
+      "xl": "1280px"
+    }
+  },
+  "codeStyle": {
+    "formatter": "prettier",
+    "linter": "eslint",
+    "language": "english",
+    "lineLength": 100,
+    "tabSize": 2,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "printWidth": 100
+  },
+  "git": {
+    "branchPrefix": "feature/",
+    "commitPrefix": "[feat]",
+    "enforcePreCommitHooks": true,
+    "requireConstitutionCheck": true
+  },
+  "constitution": {
+    "gateChecks": [
+      "test-first-development",
+      "component-driven-design",
+      "type-safety-absolute",
+      "state-management-simplified",
+      "performance-optimization",
+      "security-privacy",
+      "accessibility-wcag",
+      "code-patterns",
+      "modular-architecture",
+      "nextjs-patterns"
+    ],
+    "requireAllGatesToPass": true,
+    "enforceInPRs": true
+  }
+}

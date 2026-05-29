@@ -1,0 +1,1623 @@
+openapi: "3.0.3"
+info:
+  title: Agenda Back API
+  version: "1.0.0"
+  description: |
+    API REST multi-tenant para agendamento em salões de beleza e profissionais autônomos.
+    Todos os recursos de negócio são isolados por `businessId`.
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Enums ──────────────────────────────────────────────────────────────
+    Role:
+      type: string
+      enum: [OWNER, PROFESSIONAL, CLIENT]
+
+    AppointmentStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+
+    DayOfWeek:
+      type: string
+      enum: [MON, TUE, WED, THU, FRI, SAT, SUN]
+
+    ProductType:
+      type: string
+      enum: [SERVICE_USE, RETAIL]
+
+    # ── Responses genéricas ────────────────────────────────────────────────
+    SuccessResponse:
+      type: object
+      required: [data, message, statusCode]
+      properties:
+        data:
+          description: Payload da resposta
+        message:
+          type: string
+        statusCode:
+          type: integer
+
+    PaginatedResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items: {}
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [error, message, statusCode]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        statusCode:
+          type: integer
+
+    # ── Auth ───────────────────────────────────────────────────────────────
+    RegisterBusinessRequest:
+      type: object
+      required: [businessName, email, password]
+      properties:
+        businessName:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 500
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        ownerIsAlsoProfessional:
+          type: boolean
+          default: false
+          description: Se true, cria perfil de profissional para o dono automaticamente
+        ownerSpecialty:
+          type: string
+          description: Obrigatório se ownerIsAlsoProfessional = true
+
+    LoginRequest:
+      type: object
+      required: [email, password, businessId]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        businessId:
+          type: string
+          format: uuid
+          description: Negócio no qual o usuário deseja autenticar
+
+    AuthToken:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Segundos até expiração
+
+    # ── Business ───────────────────────────────────────────────────────────
+    Business:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        allowSelfScheduling:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateBusinessRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 500
+        phone:
+          type: string
+          maxLength: 20
+        allowSelfScheduling:
+          type: boolean
+
+    # ── Professional ───────────────────────────────────────────────────────
+    Professional:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        specialty:
+          type: string
+          nullable: true
+        commissionRate:
+          type: number
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateProfessionalRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          description: Senha provisória
+        specialty:
+          type: string
+          maxLength: 255
+        commissionRate:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    WorkingHour:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dayOfWeek:
+          $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "09:00"
+        endTime:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "18:00"
+
+    SetWorkingHoursRequest:
+      type: object
+      required: [hours]
+      properties:
+        hours:
+          type: array
+          items:
+            type: object
+            required: [dayOfWeek, startTime, endTime]
+            properties:
+              dayOfWeek:
+                $ref: "#/components/schemas/DayOfWeek"
+              startTime:
+                type: string
+                example: "09:00"
+              endTime:
+                type: string
+                example: "18:00"
+
+    LinkServicesRequest:
+      type: object
+      required: [serviceIds]
+      properties:
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    AvailableSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    # ── Service ────────────────────────────────────────────────────────────
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+        durationMinutes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateServiceRequest:
+      type: object
+      required: [name, price, durationMinutes]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        durationMinutes:
+          type: integer
+          minimum: 1
+
+    # ── Client ─────────────────────────────────────────────────────────────
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateClientRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+
+    # ── Appointment ────────────────────────────────────────────────────────
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client:
+          $ref: "#/components/schemas/Client"
+        professional:
+          $ref: "#/components/schemas/Professional"
+        service:
+          $ref: "#/components/schemas/Service"
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        cancellationReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateAppointmentRequest:
+      type: object
+      required: [clientId, professionalId, serviceId, scheduledAt]
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        professionalId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Data e hora de início do agendamento (ISO 8601)
+
+    CancelAppointmentRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+
+    RescheduleAppointmentRequest:
+      type: object
+      required: [scheduledAt, reason]
+      properties:
+        scheduledAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          maxLength: 500
+
+    # ── Inventory ──────────────────────────────────────────────────────────
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        unit:
+          type: string
+        currentStock:
+          type: number
+        minimumStock:
+          type: number
+        type:
+          $ref: "#/components/schemas/ProductType"
+        isLowStock:
+          type: boolean
+          description: true quando currentStock <= minimumStock
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required: [name, unit, minimumStock, type]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        unit:
+          type: string
+          maxLength: 50
+        minimumStock:
+          type: number
+          minimum: 0
+        type:
+          $ref: "#/components/schemas/ProductType"
+
+    StockAdjustmentRequest:
+      type: object
+      required: [quantityChange, reason]
+      properties:
+        quantityChange:
+          type: number
+          description: Positivo para entrada, negativo para saída manual
+        reason:
+          type: string
+          maxLength: 255
+
+    LinkProductsToServiceRequest:
+      type: object
+      required: [products]
+      properties:
+        products:
+          type: array
+          items:
+            type: object
+            required: [productId, quantityPerSession]
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantityPerSession:
+                type: number
+                minimum: 0.001
+
+    # ── Reports ────────────────────────────────────────────────────────────
+    FinancialReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        totalRevenue:
+          type: number
+        byProfessional:
+          type: array
+          items:
+            type: object
+            properties:
+              professional:
+                $ref: "#/components/schemas/Professional"
+              revenue:
+                type: number
+              commission:
+                type: number
+              appointmentsCompleted:
+                type: integer
+
+    AppointmentsReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        byProfessional:
+          type: array
+          items:
+            type: object
+            properties:
+              professional:
+                $ref: "#/components/schemas/Professional"
+              totalScheduled:
+                type: integer
+              totalCompleted:
+                type: integer
+              totalCancelled:
+                type: integer
+              occupancyRate:
+                type: number
+                description: Percentual de horas ocupadas vs disponíveis
+        topServices:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                $ref: "#/components/schemas/Service"
+              count:
+                type: integer
+
+    InventoryReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        lowStockProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        consumptionByProduct:
+          type: array
+          items:
+            type: object
+            properties:
+              product:
+                $ref: "#/components/schemas/Product"
+              totalConsumed:
+                type: number
+
+paths:
+  # ── Auth ─────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar novo negócio e usuário dono
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBusinessRequest"
+      responses:
+        "201":
+          description: Negócio e usuário criados com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthToken"
+        "409":
+          description: E-mail já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Autenticar usuário e obter JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthToken"
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Business ─────────────────────────────────────────────────────────────
+  /businesses/{businessId}:
+    get:
+      tags: [Business]
+      summary: Obter dados do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do negócio
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Business"
+    put:
+      tags: [Business]
+      summary: Atualizar dados do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessRequest"
+      responses:
+        "200":
+          description: Negócio atualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Business"
+
+  # ── Professionals ─────────────────────────────────────────────────────────
+  /businesses/{businessId}/professionals:
+    get:
+      tags: [Professionals]
+      summary: Listar profissionais do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Lista paginada de profissionais
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+    post:
+      tags: [Professionals]
+      summary: Cadastrar novo profissional
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProfessionalRequest"
+      responses:
+        "201":
+          description: Profissional criado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Professional"
+
+  /businesses/{businessId}/professionals/{professionalId}:
+    get:
+      tags: [Professionals]
+      summary: Obter profissional por ID
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do profissional
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Professional"
+    put:
+      tags: [Professionals]
+      summary: Atualizar profissional
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                specialty:
+                  type: string
+                commissionRate:
+                  type: number
+      responses:
+        "200":
+          description: Profissional atualizado
+
+  /businesses/{businessId}/professionals/{professionalId}/working-hours:
+    put:
+      tags: [Professionals]
+      summary: Definir horários de atendimento do profissional
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetWorkingHoursRequest"
+      responses:
+        "200":
+          description: Horários atualizados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WorkingHour"
+
+  /businesses/{businessId}/professionals/{professionalId}/services:
+    put:
+      tags: [Professionals]
+      summary: Vincular serviços ao profissional
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkServicesRequest"
+      responses:
+        "200":
+          description: Serviços vinculados
+
+  /businesses/{businessId}/professionals/{professionalId}/available-slots:
+    get:
+      tags: [Professionals]
+      summary: Obter horários disponíveis do profissional em uma data
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: serviceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Slots disponíveis
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AvailableSlot"
+
+  # ── Services ─────────────────────────────────────────────────────────────
+  /businesses/{businessId}/services:
+    get:
+      tags: [Services]
+      summary: Listar serviços do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Lista paginada de serviços
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+    post:
+      tags: [Services]
+      summary: Criar novo serviço
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Serviço criado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Service"
+
+  /businesses/{businessId}/services/{serviceId}:
+    get:
+      tags: [Services]
+      summary: Obter serviço por ID
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do serviço
+    put:
+      tags: [Services]
+      summary: Atualizar serviço
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "200":
+          description: Serviço atualizado
+    delete:
+      tags: [Services]
+      summary: Desativar serviço (soft delete)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Serviço desativado
+
+  /businesses/{businessId}/services/{serviceId}/products:
+    put:
+      tags: [Services]
+      summary: Vincular produtos ao serviço (com quantidade por atendimento)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkProductsToServiceRequest"
+      responses:
+        "200":
+          description: Produtos vinculados ao serviço
+
+  # ── Clients ─────────────────────────────────────────────────────────────
+  /businesses/{businessId}/clients:
+    get:
+      tags: [Clients]
+      summary: Listar clientes do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista paginada de clientes
+    post:
+      tags: [Clients]
+      summary: Cadastrar novo cliente
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest"
+      responses:
+        "201":
+          description: Cliente criado
+
+  /businesses/{businessId}/clients/{clientId}:
+    get:
+      tags: [Clients]
+      summary: Obter cliente por ID
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do cliente
+    put:
+      tags: [Clients]
+      summary: Atualizar cliente
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest"
+      responses:
+        "200":
+          description: Cliente atualizado
+
+  /businesses/{businessId}/clients/{clientId}/appointments:
+    get:
+      tags: [Clients]
+      summary: Histórico de agendamentos do cliente
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Histórico paginado de agendamentos
+
+  # ── Appointments ─────────────────────────────────────────────────────────
+  /businesses/{businessId}/appointments:
+    get:
+      tags: [Appointments]
+      summary: Listar agendamentos do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrar por data específica
+        - name: professionalId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Lista paginada de agendamentos
+    post:
+      tags: [Appointments]
+      summary: Criar novo agendamento
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentRequest"
+      responses:
+        "201":
+          description: Agendamento criado com status PENDING
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Appointment"
+        "409":
+          description: Conflito de horário ou fora do horário de atendimento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Produto vinculado ao serviço sem estoque
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /businesses/{businessId}/appointments/{appointmentId}:
+    get:
+      tags: [Appointments]
+      summary: Obter agendamento por ID
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do agendamento
+
+  /businesses/{businessId}/appointments/{appointmentId}/confirm:
+    patch:
+      tags: [Appointments]
+      summary: Confirmar agendamento (PENDING → CONFIRMED)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Agendamento confirmado; notificação WhatsApp disparada
+
+  /businesses/{businessId}/appointments/{appointmentId}/cancel:
+    patch:
+      tags: [Appointments]
+      summary: Cancelar agendamento (PENDING|CONFIRMED → CANCELLED)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelAppointmentRequest"
+      responses:
+        "200":
+          description: Agendamento cancelado; notificação WhatsApp disparada
+
+  /businesses/{businessId}/appointments/{appointmentId}/complete:
+    patch:
+      tags: [Appointments]
+      summary: Concluir agendamento (CONFIRMED → COMPLETED)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Agendamento concluído; estoque baixado automaticamente
+        "422":
+          description: Estoque insuficiente para concluir o agendamento
+
+  /businesses/{businessId}/appointments/{appointmentId}/reschedule:
+    patch:
+      tags: [Appointments]
+      summary: Reagendar agendamento
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleAppointmentRequest"
+      responses:
+        "200":
+          description: Agendamento reagendado
+        "409":
+          description: Conflito de horário no novo horário
+
+  # ── Inventory ─────────────────────────────────────────────────────────────
+  /businesses/{businessId}/products:
+    get:
+      tags: [Inventory]
+      summary: Listar produtos do negócio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProductType"
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+          description: Se true, retorna apenas produtos com estoque abaixo do mínimo
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Lista paginada de produtos
+    post:
+      tags: [Inventory]
+      summary: Cadastrar novo produto
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Produto criado
+
+  /businesses/{businessId}/products/{productId}:
+    get:
+      tags: [Inventory]
+      summary: Obter produto por ID
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados do produto
+    put:
+      tags: [Inventory]
+      summary: Atualizar produto
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "200":
+          description: Produto atualizado
+
+  /businesses/{businessId}/products/{productId}/stock-adjustment:
+    post:
+      tags: [Inventory]
+      summary: Ajuste manual de estoque
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockAdjustmentRequest"
+      responses:
+        "200":
+          description: Estoque ajustado
+        "422":
+          description: Estoque resultante seria negativo
+
+  # ── Reports ───────────────────────────────────────────────────────────────
+  /businesses/{businessId}/reports/financial:
+    get:
+      tags: [Reports]
+      summary: Relatório financeiro por período
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Relatório financeiro
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FinancialReport"
+
+  /businesses/{businessId}/reports/appointments:
+    get:
+      tags: [Reports]
+      summary: Relatório de agendamentos por período
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: professionalId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Relatório de agendamentos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AppointmentsReport"
+
+  /businesses/{businessId}/reports/inventory:
+    get:
+      tags: [Reports]
+      summary: Relatório de estoque por período
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Relatório de estoque
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InventoryReport"

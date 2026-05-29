@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agenda Front — Frontend da Plataforma de Agendamento
 
-## Getting Started
+> Frontend em **Next.js + React + TypeScript** para a plataforma **Agenda** (agendamento para salões de beleza e profissionais autônomos).
 
-First, run the development server:
+## 🚀 Quick Start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy environment variables
+cp .env.example .env.local
+
+# 3. Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 4. Open http://localhost:3000 in your browser
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Prerequisites**: Node.js 18+, npm/yarn, Backend API running at http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Documentation
 
-## Learn More
+Read in this order:
 
-To learn more about Next.js, take a look at the following resources:
+1. **[Quick Start](./specs/001-salon-scheduling-platform/quickstart.md)** — 5-minute setup
+2. **[Spec](./specs/001-salon-scheduling-platform/spec.md)** — Feature requirements
+3. **[Plan](./specs/001-salon-scheduling-platform/plan.md)** — Architecture & phases
+4. **[Data Model](./specs/001-salon-scheduling-platform/data-model.md)** — TypeScript types
+5. **[Tasks](./specs/001-salon-scheduling-platform/tasks.md)** — Implementation tasks
+6. **[Research](./specs/001-salon-scheduling-platform/research.md)** — Tool references
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Available Scripts
 
-## Deploy on Vercel
+```bash
+# Development
+npm run dev              # Start dev server (http://localhost:3000)
+npm run build            # Build for production
+npm start                # Run production build
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Code Quality
+npm run lint             # Run ESLint on src/
+npm run format           # Format with Prettier
+npm run format:check     # Check Prettier (CI)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Testing
+npm test                 # Run Vitest (once)
+npm run test:watch       # Watch mode
+npm run test:cov         # Coverage report
+```
+
+---
+
+## 📁 Project Structure
+
+```
+agenda-front/
+├── specs/                                    # Spec Kit documentation
+│   └── 001-salon-scheduling-platform/
+│       ├── spec.md                          # ← Start here!
+│       ├── plan.md
+│       ├── tasks.md
+│       ├── data-model.md
+│       ├── research.md
+│       ├── quickstart.md
+│       ├── checklists/
+│       └── contracts/
+├── src/
+│   ├── app/                                 # Next.js App Router pages
+│   ├── components/                          # Reusable React components
+│   ├── modules/                             # Feature modules (domain-driven)
+│   ├── services/                            # API client & business logic
+│   ├── hooks/                               # Custom React hooks
+│   ├── context/                             # React Context (state)
+│   ├── types/                               # TypeScript type definitions
+│   ├── utils/                               # Utilities & helpers
+│   ├── styles/                              # Global styles
+│   └── middleware.ts                        # Next.js middleware
+├── .claude/                                 # Claude.dev configuration
+├── public/                                  # Static assets
+├── .env.example                             # Environment variables template
+├── next.config.ts                           # Next.js configuration
+├── tsconfig.json                            # TypeScript configuration
+└── package.json
+```
+
+See [spec.md](./specs/001-salon-scheduling-platform/spec.md) for detailed structure.
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Framework** | Next.js 14+ | SSR/SSG, built-in optimization, file-based routing |
+| **Language** | TypeScript 5.x | Type safety, IDE autocomplete, fewer bugs |
+| **UI Library** | React 18+ | Hooks, concurrent rendering, huge ecosystem |
+| **Styling** | Tailwind CSS | Utility-first, rapid prototyping, small bundle |
+| **HTTP Client** | axios | Simple API, interceptors, timeouts |
+| **Testing** | Vitest + RTL | Fast, modern, intuitive |
+
+---
+
+## 🔌 Backend Integration
+
+**API Base URL**: http://localhost:3000/api/v1 (development)
+
+**Authentication**: JWT Bearer token
+
+**Backend Repo**: [../../agenda-back](../../agenda-back)
+
+---
+
+## 🚨 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **Port 3000 already in use** | `PORT=3001 npm run dev` |
+| **API 404 errors** | Verify backend running: `curl http://localhost:3000` |
+| **TypeScript errors** | Run `npm run lint` for details |
+| **Module not found** | Run `npm install` again |
+
+---
+
+## 📊 Current Status
+
+**Phase**: 0 (Setup) ✅ Complete  
+**Phase 1**: Core Architecture & Auth (next)
+
+| Task | Status |
+|------|--------|
+| TypeScript strict mode | ✅ |
+| Environment variables | ✅ |
+| ESLint + Prettier | ✅ |
+| Vitest + RTL | ✅ |
+| Folder structure | ✅ |
+| Husky pre-commit | ✅ |
+
+**Next Steps**: See [tasks.md](./specs/001-salon-scheduling-platform/tasks.md) — Phase 1
+
+---
+
+**Last Updated**: 2026-05-28  
+**More Info**: See [CLAUDE.md](./CLAUDE.md)
