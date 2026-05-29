@@ -47,6 +47,9 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
+# AI config & data (server-side, never commit)
+/data/
+
 # IDE
 .idea/
 .vscode/settings.json

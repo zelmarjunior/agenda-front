@@ -4,7 +4,8 @@ export interface RegisterBusinessRequest {
   phone: string;
   email: string;
   password: string;
-  ownerIsAlsoProfessional: boolean;
+  soloMode?: boolean;
+  ownerIsAlsoProfessional?: boolean;
   ownerSpecialty?: string;
 }
 

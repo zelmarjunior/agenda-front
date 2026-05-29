@@ -19,6 +19,7 @@ const schema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   allowSelfScheduling: z.boolean(),
+  soloMode: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -44,7 +45,7 @@ export function SettingsContent(): JSX.Element {
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', address: '', phone: '', allowSelfScheduling: false },
+    defaultValues: { name: '', address: '', phone: '', allowSelfScheduling: false, soloMode: false },
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export function SettingsContent(): JSX.Element {
         address: business.address ?? '',
         phone: business.phone ?? '',
         allowSelfScheduling: business.allowSelfScheduling,
+        soloMode: business.soloMode,
       });
     }
   }, [business, reset]);
@@ -65,7 +67,9 @@ export function SettingsContent(): JSX.Element {
         address: values.address || undefined,
         phone: values.phone || undefined,
         allowSelfScheduling: values.allowSelfScheduling,
+        soloMode: values.soloMode,
       });
+      storage.setSoloMode(values.soloMode);
       toast('Configurações salvas!', 'success');
       mutate();
     } catch (err) {
@@ -140,17 +144,26 @@ export function SettingsContent(): JSX.Element {
 
             <div className="flex items-center justify-between py-3 border-t border-gray-100">
               <div>
+                <p className="text-sm font-medium text-gray-700">Modo solo</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Só a dona/dono atende — oculta seleção de profissional nos agendamentos
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" {...register('soloMode')} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div>
                 <p className="text-sm font-medium text-gray-700">Auto-agendamento</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Permitir que clientes agendem diretamente pelo link público
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register('allowSelfScheduling')}
-                  className="sr-only peer"
-                />
+                <input type="checkbox" {...register('allowSelfScheduling')} className="sr-only peer" />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>

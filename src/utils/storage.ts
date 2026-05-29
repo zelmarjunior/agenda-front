@@ -2,6 +2,7 @@ const KEYS = {
   accessToken: 'agenda:token',
   businessId: 'agenda:businessId',
   lastBusiness: 'agenda:lastBusiness',
+  soloMode: 'agenda:soloMode',
 } as const;
 
 function safeGet(key: string): string | null {
@@ -68,9 +69,13 @@ export const storage = {
   setLastBusiness: (data: { businessId: string; businessName: string }): void =>
     safeSet(KEYS.lastBusiness, JSON.stringify(data)),
 
+  getSoloMode: (): boolean => safeGet(KEYS.soloMode) === 'true',
+  setSoloMode: (val: boolean): void => safeSet(KEYS.soloMode, String(val)),
+
   clearAll: (): void => {
     safeRemove(KEYS.accessToken);
     safeRemove(KEYS.businessId);
+    safeRemove(KEYS.soloMode);
     setAuthCookie(false);
     // lastBusiness is intentionally kept — login form needs businessId before a token exists
   },

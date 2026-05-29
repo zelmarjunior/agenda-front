@@ -11,6 +11,7 @@ import { clientsService } from '@/modules/clients/services/clientsService';
 import { servicesService } from '@/modules/services/services/servicesService';
 import { storage } from '@/utils/storage';
 import { decodeToken } from '@/utils/jwt';
+import { useBusiness } from '@/modules/business/hooks/useBusiness';
 import { generateTimeSlots, toDateStr } from '@/utils/calendar';
 import { getApiError } from '@/services/api';
 import { useToast } from '@/context/ToastContext';
@@ -58,6 +59,8 @@ export function AppointmentForm({
 }: AppointmentFormProps): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const { toast } = useToast();
+  const business = useBusiness();
+  const soloMode = business?.soloMode ?? storage.getSoloMode();
 
   const currentPayload = decodeToken(storage.getToken() ?? '');
   const currentUserId = currentPayload?.sub ?? null;
@@ -300,39 +303,41 @@ export function AppointmentForm({
         )}
       </div>
 
-      {/* ── Professional ───────────────────────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label htmlFor="professionalId" className={labelCls + ' mb-0'}>
-            Profissional
-          </label>
-          {isCurrentUserProfessional && (
-            <span className="text-[10px] text-blue-500 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
-              Você foi pré-selecionado
-            </span>
+      {/* ── Professional (oculto em modo solo — auto-selecionado pelo useEffect) */}
+      {!soloMode && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="professionalId" className={labelCls + ' mb-0'}>
+              Profissional
+            </label>
+            {isCurrentUserProfessional && (
+              <span className="text-[10px] text-blue-500 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
+                Você foi pré-selecionado
+              </span>
+            )}
+          </div>
+          <select
+            id="professionalId"
+            {...register('professionalId')}
+            className={inputCls}
+            aria-invalid={!!errors.professionalId}
+          >
+            <option value="">Selecionar profissional...</option>
+            {(profData?.data ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.userId === currentUserId ? '★ ' : ''}
+                {p.name}
+                {p.specialty ? ` · ${p.specialty}` : ''}
+              </option>
+            ))}
+          </select>
+          {errors.professionalId && (
+            <p role="alert" className="mt-1 text-xs text-red-500">
+              {errors.professionalId.message}
+            </p>
           )}
         </div>
-        <select
-          id="professionalId"
-          {...register('professionalId')}
-          className={inputCls}
-          aria-invalid={!!errors.professionalId}
-        >
-          <option value="">Selecionar profissional...</option>
-          {(profData?.data ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.userId === currentUserId ? '★ ' : ''}
-              {p.name}
-              {p.specialty ? ` · ${p.specialty}` : ''}
-            </option>
-          ))}
-        </select>
-        {errors.professionalId && (
-          <p role="alert" className="mt-1 text-xs text-red-500">
-            {errors.professionalId.message}
-          </p>
-        )}
-      </div>
+      )}
 
       {/* ── Service ────────────────────────────────────────────────────────── */}
       <div>

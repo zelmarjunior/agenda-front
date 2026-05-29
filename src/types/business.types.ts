@@ -4,6 +4,7 @@ export interface Business {
   address: string;
   phone: string;
   allowSelfScheduling: boolean;
+  soloMode: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -13,4 +14,5 @@ export interface UpdateBusinessRequest {
   address?: string;
   phone?: string;
   allowSelfScheduling?: boolean;
+  soloMode?: boolean;
 }

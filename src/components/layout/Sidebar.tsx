@@ -97,6 +97,20 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/marketing',
+    label: 'Marketing IA',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
+      </svg>
+    ),
+  },
+  {
     href: '/reports',
     label: 'Relatórios',
     icon: (

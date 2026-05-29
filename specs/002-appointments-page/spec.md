@@ -1,0 +1,65 @@
+# Spec: Página de Agendamentos
+
+**Página**: `/appointments`  
+**Status**: ✅ Especificado | ✅ Implementado | ✅ Testado (parcial)  
+**Última atualização**: 2026-05-29
+
+---
+
+## User Story
+
+**Como** dono ou profissional,  
+**Quero** visualizar e gerenciar agendamentos em uma agenda visual,  
+**Para que** eu possa criar, confirmar, cancelar e reagendar atendimentos com facilidade.
+
+---
+
+## Acceptance Scenarios
+
+1. **Given** dono autenticado, **When** acessa `/appointments`, **Then** visualiza agenda dos próximos 14 dias agrupada por dia.
+
+2. **Given** agenda aberta, **When** clica em um agendamento, **Then** visualiza detalhes e opções de ação (confirmar, cancelar, reagendar).
+
+3. **Given** agendamento `PENDING`, **When** clica em "Confirmar", **Then** status muda para `CONFIRMED` com feedback visual.
+
+4. **Given** qualquer agendamento, **When** clica em "Cancelar", **Then** modal de cancelamento abre pedindo motivo antes de confirmar.
+
+5. **Given** agenda aberta, **When** navega entre semanas no mini-calendário, **Then** a visualização dos 14 dias é atualizada.
+
+6. **Given** sem agendamentos no dia, **When** visualiza o dia na agenda, **Then** estado de "sem agendamentos" é exibido claramente.
+
+---
+
+## Functional Requirements
+
+- **FR-APPT-PAGE-001**: Exibir agendamentos dos próximos 14 dias agrupados por data.
+- **FR-APPT-PAGE-002**: Exibir badge de status colorido em cada agendamento.
+- **FR-APPT-PAGE-003**: Permitir confirmar, cancelar (com motivo) e reagendar (com motivo) diretamente na agenda.
+- **FR-APPT-PAGE-004**: Mini-calendário para navegar entre datas.
+- **FR-APPT-PAGE-005**: Timeline por hora para o dia selecionado.
+- **FR-APPT-PAGE-006**: Dados atualizados via SWR (revalidação ao focar a janela).
+
+---
+
+## Componentes
+
+- `AppointmentAgenda.tsx` — agenda 14 dias agrupada por dia
+- `AppointmentList.tsx` — view tabular alternativa
+- `AppointmentStatusBadge.tsx` — badge colorido por status
+- `CancelForm.tsx` — modal com campo de motivo
+- `RescheduleForm.tsx` — modal para reagendamento
+- `MonthCalendar.tsx` — calendário de navegação
+- `DayTimeline.tsx` — timeline horária do dia
+- `useAppointments.ts` — SWR hook com filtros
+- `appointmentsService.ts` — chamadas à API
+
+---
+
+## Status Colors
+
+| Status | Cor |
+|---|---|
+| PENDING | Amarelo |
+| CONFIRMED | Verde |
+| COMPLETED | Azul |
+| CANCELLED | Vermelho/Cinza |

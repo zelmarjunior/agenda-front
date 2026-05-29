@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 import { useRouter } from 'next/navigation';
 import type { AuthState, LoginRequest, RegisterBusinessRequest } from '@/types/auth.types';
 import { authService } from '@/modules/auth/services/authService';
+import { businessService } from '@/modules/business/services/businessService';
 import { decodeToken } from '@/utils/jwt';
 import { storage } from '@/utils/storage';
 
@@ -45,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       const payload = decodeToken(token);
       if (payload) {
         storage.setBusinessId(payload.businessId);
+        // Fetch and cache solo mode so AppointmentForm doesn't need an extra request
+        businessService.get(payload.businessId)
+          .then((biz) => storage.setSoloMode(biz.soloMode))
+          .catch(() => {});
       }
       setAuth(buildAuthState());
       router.push('/');
@@ -64,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           businessName: data.businessName,
         });
       }
+      storage.setSoloMode(data.soloMode ?? false);
       setAuth(buildAuthState());
       router.push('/');
     },
