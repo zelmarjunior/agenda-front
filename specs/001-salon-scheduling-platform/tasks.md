@@ -1,6 +1,6 @@
 # Implementation Tasks — Agenda Front
 
-**Feature**: 001-salon-scheduling-platform | **Status**: Phase 5 Complete ✅ | **Date**: 2026-05-28
+**Feature**: 001-salon-scheduling-platform | **Status**: Phase 6 Em Andamento 🟡 | **Date**: 2026-05-29
 
 ---
 
@@ -185,30 +185,16 @@ export default defineConfig({
 **Description**: Configure branch naming, commit conventions, pre-commit hooks
 
 **Subtasks**:
-- [ ] Install husky
-  ```bash
-  npm install --save-dev husky && npx husky install
-  ```
-- [ ] Create `.husky/pre-commit` hook (run lint + test)
-- [ ] Create `CONTRIBUTING.md` with:
-  - Branch naming convention: `feature/`, `bugfix/`, `chore/`
-  - Commit message format: `[feat] Task description`
-  - PR template
+- [x] Install husky
+- [x] `.husky/pre-commit` criado
+- ~~[ ] Pre-commit hook com lint + test~~ — **Removido em 2026-05-29** (esvaziado por decisão do time; validações rodam manualmente via `npm run lint` e `npm test`)
+- [ ] Create `CONTRIBUTING.md`
 - [ ] Create `.gitignore` additions (`.env.local`, `coverage/`, etc)
-- [ ] Commit: `[feat] P0-T6: Setup Git workflow & husky`
-
-**Example pre-commit hook**:
-```bash
-#!/bin/sh
-npm run lint
-npm run test -- --run
-```
 
 **Definition of Done**:
-- Husky installed
-- Pre-commit hooks running
-- CONTRIBUTING.md created
-- Branch protection rules ready
+- Husky instalado ✅
+- Pre-commit hook desabilitado ✅ (por escolha)
+- CONTRIBUTING.md — pendente
 
 **Time Estimate**: 1–2 hours
 
@@ -264,9 +250,9 @@ npm run test -- --run
 - [ ] `src/modules/auth/services/authService.ts`
 - [ ] Login em 2 etapas (email → confirma negócio → senha)
 
-### ⚪ P1-T4: Protected Routes (middleware)
-- [ ] `src/middleware.ts`
-- [ ] Layout protegido `src/app/(dashboard)/layout.tsx`
+### ✅ P1-T4: Protected Routes (middleware)
+- [x] `src/middleware.ts` — criado (estava com nome errado `proxy.ts`, corrigido em 2026-05-29)
+- [x] Layout protegido `src/app/(dashboard)/layout.tsx`
 
 ### ⚪ P1-T5: Tela de Login (2 etapas)
 - [ ] `src/app/(auth)/login/page.tsx`
@@ -345,6 +331,15 @@ npm run test -- --run
 - ⚪ Not Started
 - 🔄 Blocked / Waiting
 - ❌ Cancelled
+
+---
+
+## Bugs Corrigidos (fora de fase)
+
+| Data | Bug | Correção |
+|------|-----|---------|
+| 2026-05-29 | `src/proxy.ts` era o middleware de auth mas com nome errado — Next.js ignorava, `/appointments` retornava 404 para usuários não autenticados | Renomeado para `src/middleware.ts`; função exportada renomeada de `proxy` para `middleware` |
+| 2026-05-29 | Pre-commit hook rodava `npx lint-staged` + `npm test` bloqueando commits | `.husky/pre-commit` esvaziado por decisão do time |
 
 ---
 

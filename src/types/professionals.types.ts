@@ -42,7 +42,5 @@ export interface LinkServicesRequest {
   serviceIds: string[];
 }
 
-export interface AvailableSlot {
-  startTime: string;
-  endTime: string;
-}
+// Backend returns plain ISO strings: "2026-05-29T09:00:00"
+export type AvailableSlot = string;

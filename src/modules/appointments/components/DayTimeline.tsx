@@ -30,6 +30,7 @@ interface DayTimelineProps {
   dateStr: string;
   appointments: Appointment[];
   onTimeSlotClick: (isoDatetime: string) => void;
+  onEdit: (appt: Appointment) => void;
   onConfirm: (appt: Appointment) => void;
   onCancel: (appt: Appointment) => void;
   onComplete: (appt: Appointment) => void;
@@ -52,6 +53,7 @@ export function DayTimeline({
   dateStr,
   appointments,
   onTimeSlotClick,
+  onEdit,
   onConfirm,
   onCancel,
   onComplete,
@@ -148,7 +150,12 @@ export function DayTimeline({
               return (
                 <div
                   key={appt.id}
-                  className={`absolute left-2 right-2 rounded-xl border px-2.5 py-2 z-10 overflow-hidden backdrop-blur-sm ${borderCls}`}
+                  role="button"
+                  tabIndex={0}
+                  title="Clique para editar"
+                  onClick={() => onEdit(appt)}
+                  onKeyDown={(e) => e.key === 'Enter' && onEdit(appt)}
+                  className={`absolute left-2 right-2 rounded-xl border px-2.5 py-2 z-10 overflow-hidden backdrop-blur-sm cursor-pointer hover:brightness-95 transition-all ${borderCls}`}
                   style={{ top, height, background: bgColor }}
                 >
                   <div className="flex items-start justify-between gap-1 min-w-0">
@@ -168,6 +175,11 @@ export function DayTimeline({
                       </p>
                       <p className="text-[10px] opacity-60 font-medium tabular-nums">
                         {formatTime(appt.scheduledAt)}
+                        {appt.finalPrice != null && (
+                          <span className="ml-1.5 font-semibold">
+                            · R$ {Number(appt.finalPrice).toFixed(2).replace('.', ',')}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

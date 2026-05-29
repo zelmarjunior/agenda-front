@@ -11,6 +11,7 @@ export interface Appointment {
   service: Service;
   scheduledAt: string;
   durationMinutes: number;
+  finalPrice: number | null;
   status: AppointmentStatus;
   cancellationReason: string | null;
   createdAt: string;
@@ -21,6 +22,11 @@ export interface CreateAppointmentRequest {
   professionalId: string;
   serviceId: string;
   scheduledAt: string;
+  finalPrice?: number;
+}
+
+export interface UpdateAppointmentRequest {
+  finalPrice?: number;
 }
 
 export interface CancelAppointmentRequest {

@@ -25,6 +25,7 @@ const schema = z.object({
   serviceId: z.string().min(1, 'Selecione um serviço'),
   date: z.string().min(1, 'Informe a data'),
   time: z.string().min(1, 'Informe o horário'),
+  finalPrice: z.string().min(1, 'Informe o valor'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -80,6 +81,11 @@ export function AppointmentForm({
       serviceId: initial?.service.id ?? '',
       date: defaultDate,
       time: defaultTime,
+      finalPrice: initial?.finalPrice != null
+        ? String(Number(initial.finalPrice).toFixed(2))
+        : initial?.service?.price != null
+          ? String(Number(initial.service.price).toFixed(2))
+          : '',
     },
   });
 
@@ -130,6 +136,14 @@ export function AppointmentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [professionalId, serviceId, date]);
 
+  // ── Auto-fill price when service changes ─────────────────────────────────
+
+  useEffect(() => {
+    if (initial) return;
+    const svc = svcData?.data.find((s) => s.id === serviceId);
+    if (svc) setValue('finalPrice', String(Number(svc.price).toFixed(2)));
+  }, [serviceId, svcData, initial, setValue]);
+
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const allClients = [
@@ -141,7 +155,7 @@ export function AppointmentForm({
   const availableTimeSlots: string[] = (() => {
     if (!canFetchSlots || !slotsData) return ALL_TIME_SLOTS;
     return slotsData.map((s) => {
-      const d = new Date(s.startTime);
+      const d = new Date(s);
       return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
   })();
@@ -165,11 +179,12 @@ export function AppointmentForm({
         phone: newPhone.trim() || undefined,
       });
       setExtraClients((prev) => [...prev, created]);
-      setValue('clientId', created.id, { shouldValidate: true });
       setShowNewClient(false);
       setNewName('');
       setNewPhone('');
       mutateClients();
+      // Set value after state update so the new option is already in the DOM
+      setTimeout(() => setValue('clientId', created.id, { shouldValidate: true }), 0);
       toast(`Cliente "${created.name}" criada!`, 'success');
     } catch (err) {
       toast(getApiError(err), 'error');
@@ -184,6 +199,7 @@ export function AppointmentForm({
       clientId: values.clientId,
       professionalId: values.professionalId,
       serviceId: values.serviceId,
+      finalPrice: values.finalPrice,
     });
   }
 
@@ -406,6 +422,28 @@ export function AppointmentForm({
             </p>
           )}
         </div>
+      </div>
+
+      {/* ── Price ──────────────────────────────────────────────────────────── */}
+      <div>
+        <label htmlFor="finalPrice" className={labelCls}>
+          Valor do atendimento (R$)
+        </label>
+        <input
+          id="finalPrice"
+          type="number"
+          step="0.01"
+          min="0"
+          {...register('finalPrice')}
+          className={inputCls}
+          placeholder="0,00"
+          aria-invalid={!!errors.finalPrice}
+        />
+        {errors.finalPrice && (
+          <p role="alert" className="mt-1 text-xs text-red-500">
+            {errors.finalPrice.message}
+          </p>
+        )}
       </div>
 
       {/* ── Summary ────────────────────────────────────────────────────────── */}

@@ -21,7 +21,7 @@ import { toDateStr } from '@/utils/calendar';
 import type { Appointment } from '@/types/appointments.types';
 
 type View = 'calendar' | 'list';
-type ModalType = 'create' | 'cancel' | 'reschedule' | null;
+type ModalType = 'create' | 'edit' | 'cancel' | 'reschedule' | null;
 
 export function AppointmentListPage(): JSX.Element {
   const businessId = storage.getBusinessId()!;
@@ -37,6 +37,7 @@ export function AppointmentListPage(): JSX.Element {
   const [modal, setModal] = useState<ModalType>(null);
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
+  const [editTarget, setEditTarget] = useState<Appointment | null>(null);
   const [profileClientId, setProfileClientId] = useState<string | null>(null);
   const [prefilledDatetime, setPrefilledDatetime] = useState<string | undefined>(undefined);
 
@@ -74,20 +75,30 @@ export function AppointmentListPage(): JSX.Element {
     setModal('reschedule');
   }
 
+  function openEdit(appt: Appointment): void {
+    setEditTarget(appt);
+    setModal('edit');
+  }
+
   function closeModal(): void {
     setModal(null);
     setCancelTarget(null);
     setRescheduleTarget(null);
+    setEditTarget(null);
     setPrefilledDatetime(undefined);
   }
 
   const handleCreate = useCallback(
     async (
       scheduledAt: string,
-      values: { clientId: string; professionalId: string; serviceId: string },
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string },
     ): Promise<void> => {
       try {
-        await appointmentsService.create(businessId, { ...values, scheduledAt });
+        await appointmentsService.create(businessId, {
+          ...values,
+          scheduledAt,
+          finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
+        });
         toast('Agendamento criado!', 'success');
         closeModal();
         mutate();
@@ -96,6 +107,26 @@ export function AppointmentListPage(): JSX.Element {
       }
     },
     [businessId, mutate, toast],
+  );
+
+  const handleEdit = useCallback(
+    async (
+      _scheduledAt: string,
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string },
+    ): Promise<void> => {
+      if (!editTarget) return;
+      try {
+        await appointmentsService.update(businessId, editTarget.id, {
+          finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
+        });
+        toast('Agendamento atualizado!', 'success');
+        closeModal();
+        mutate();
+      } catch (err) {
+        toast(getApiError(err), 'error');
+      }
+    },
+    [businessId, editTarget, mutate, toast],
   );
 
   const handleConfirm = useCallback(
@@ -210,6 +241,7 @@ export function AppointmentListPage(): JSX.Element {
                   dateStr={selectedDate}
                   appointments={dayAppointments}
                   onTimeSlotClick={(dt) => openCreate(dt)}
+                  onEdit={openEdit}
                   onConfirm={handleConfirm}
                   onCancel={openCancel}
                   onComplete={handleComplete}
@@ -228,6 +260,16 @@ export function AppointmentListPage(): JSX.Element {
           onSubmit={handleCreate}
           onCancel={closeModal}
         />
+      </Modal>
+
+      <Modal open={modal === 'edit'} onClose={closeModal} title="Editar agendamento" size="md">
+        {editTarget && (
+          <AppointmentForm
+            initial={editTarget}
+            onSubmit={handleEdit}
+            onCancel={closeModal}
+          />
+        )}
       </Modal>
 
       <Modal open={modal === 'cancel'} onClose={closeModal} title="Cancelar agendamento" size="sm">

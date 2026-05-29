@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,9 +22,14 @@ type Step1Values = z.infer<typeof step1Schema>;
 type Step2Values = z.infer<typeof step2Schema>;
 
 export function LoginForm(): JSX.Element {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace('/');
+  }, [isAuthenticated, router]);
   const [email, setEmail] = useState('');
   const [storedBusiness, setStoredBusiness] = useState<{
     businessId: string;

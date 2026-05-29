@@ -19,7 +19,13 @@ function buildAuthState(): AuthState {
   const token = storage.getToken();
   if (!token) return { token: null, businessId: null, role: null, isAuthenticated: false };
   const payload = decodeToken(token);
-  if (!payload) return { token: null, businessId: null, role: null, isAuthenticated: false };
+  if (!payload) {
+    storage.removeToken();
+    return { token: null, businessId: null, role: null, isAuthenticated: false };
+  }
+  // Sync the auth cookie so the middleware can detect this session.
+  // Needed when the token exists in localStorage but the cookie was cleared.
+  storage.setToken(token);
   return {
     token,
     businessId: payload.businessId,

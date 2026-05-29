@@ -6,6 +6,7 @@ import type {
   CancelAppointmentRequest,
   CreateAppointmentRequest,
   RescheduleAppointmentRequest,
+  UpdateAppointmentRequest,
 } from '@/types/appointments.types';
 
 export const appointmentsService = {
@@ -64,5 +65,17 @@ export const appointmentsService = {
     data: RescheduleAppointmentRequest,
   ): Promise<void> {
     await api.patch(`/businesses/${businessId}/appointments/${appointmentId}/reschedule`, data);
+  },
+
+  async update(
+    businessId: string,
+    appointmentId: string,
+    data: UpdateAppointmentRequest,
+  ): Promise<Appointment> {
+    const response = await api.patch<SuccessResponse<Appointment>>(
+      `/businesses/${businessId}/appointments/${appointmentId}`,
+      data,
+    );
+    return response.data.data;
   },
 };
