@@ -14,6 +14,14 @@ export const authService = {
     return response.data.data;
   },
 
+  async lookupBusinesses(email: string): Promise<{ id: string; name: string }[]> {
+    const response = await api.post<SuccessResponse<{ id: string; name: string }[]>>(
+      '/auth/lookup-businesses',
+      { email },
+    );
+    return response.data.data;
+  },
+
   async getBusiness(businessId: string): Promise<Business> {
     const response = await api.get<SuccessResponse<Business>>(`/businesses/${businessId}`);
     return response.data.data;

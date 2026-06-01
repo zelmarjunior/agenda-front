@@ -1,8 +1,8 @@
 # Spec: Dashboard
 
 **Página**: `/` (dashboard home)  
-**Status**: ✅ Especificado | ✅ Implementado | ⚠️ Testado (manual)  
-**Última atualização**: 2026-05-29
+**Status**: ✅ Especificado | ✅ Implementado | ⚠️ Testado (manual) | 🔄 Atualizado 2026-05-30  
+**Última atualização**: 2026-05-30
 
 ---
 
@@ -33,24 +33,50 @@
 
 ---
 
-## Navegação (Sidebar)
+## Navegação (Sidebar) — Atualizado 2026-05-30
 
-| Item | Rota | Ícone |
-|---|---|---|
-| Agenda | `/appointments` | Calendário |
-| Clientes | `/clients` | Pessoas |
-| Profissionais | `/professionals` | Usuário |
-| Serviços | `/services` | Lista |
-| Estoque | `/inventory` | Caixa |
-| Relatórios | `/reports` | Gráfico |
-| Marketing IA | `/marketing` | Brilho |
-| Configurações | `/settings` | Engrenagem |
+> ⚠️ **Relatórios foi removido do menu lateral.** A seção de relatórios foi movida para dentro do Dashboard.
+> 
+> ⚠️ **Menu superior** sendo avaliado como alternativa ao lateral para melhor uso de espaço horizontal.
+
+| Item | Rota | Ícone | Contador |
+|---|---|---|---|
+| Agenda | `/appointments` | Calendário | Agendamentos do dia |
+| Clientes | `/clients` | Pessoas | Total de clientes |
+| Profissionais | `/professionals` | Usuário | Total de profissionais |
+| Serviços | `/services` | Lista | Total de serviços ativos |
+| Estoque | `/inventory` | Caixa | Produtos abaixo do mínimo |
+| Financeiro | `/financeiro` | Cifrão | — |
+| Marketing IA | `/marketing` | Brilho | — |
+| Configurações | `/settings` | Engrenagem | — |
+
+### Contadores nas Guias
+
+Cada item de navegação DEVE exibir um badge numérico com:
+- **Agenda**: número de agendamentos confirmados para hoje
+- **Estoque**: número de produtos abaixo do estoque mínimo (badge vermelho se > 0)
+- **Clientes/Profissionais/Serviços**: total de registros ativos
+
+Contadores são carregados uma vez ao montar o layout e atualizados a cada 5 minutos ou ao navegar entre rotas.
 
 ---
+
+## Seção de Relatórios no Dashboard — Nova (2026-05-30)
+
+O dashboard DEVE incluir uma seção de relatórios rápidos com:
+1. **Mapa de calor de horários** — grid hora × dia-da-semana com intensidade de cor
+2. **Relatório de pagamentos pendentes** — lista compacta de agendamentos sem paymentMethod
+3. **Resumo financeiro rápido** — receita do mês, custos, lucro líquido (cards)
+
+Esses painéis substituem a rota `/reports` que será descontinuada.
 
 ## Componentes
 
 - `layout.tsx` — sidebar + main content wrapper
 - `DashboardContent.tsx` — conteúdo da home
+- `NavBadge.tsx` — badge numérico para contadores nas guias
+- `HeatmapPanel.tsx` — mapa de calor de horários
+- `PendingPaymentsPanel.tsx` — painel de pagamentos pendentes
+- `FinancialSnapshotPanel.tsx` — resumo financeiro rápido
 - `AuthContext` — estado global de autenticação (token, businessId, logout)
 - `api.ts` — instância axios com interceptor de auth header e redirect em 401

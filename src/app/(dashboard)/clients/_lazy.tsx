@@ -3,8 +3,8 @@
 import dynamic from 'next/dynamic';
 import { Spinner } from '@/components/common/Spinner';
 
-const ClientList = dynamic(
-  () => import('@/modules/clients/components/ClientList').then((m) => m.ClientList),
+const ClientsContent = dynamic(
+  () => import('@/modules/clients/components/ClientsContent').then((m) => m.ClientsContent),
   {
     loading: () => (
       <div className="py-16">
@@ -16,5 +16,5 @@ const ClientList = dynamic(
 );
 
 export default function LazyClientList(): JSX.Element {
-  return <ClientList />;
+  return <ClientsContent />;
 }

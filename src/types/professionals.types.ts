@@ -5,6 +5,9 @@ export interface Professional {
   name: string;
   specialty: string | null;
   commissionRate: number | null;
+  phone: string | null;
+  photoUrl: string | null;
+  calendarColor: string | null;
   userId: string;
   createdAt: string;
 }
@@ -15,12 +18,16 @@ export interface CreateProfessionalRequest {
   password: string;
   specialty?: string;
   commissionRate?: number;
+  phone?: string;
+  calendarColor?: string;
 }
 
 export interface UpdateProfessionalRequest {
   name?: string;
   specialty?: string;
   commissionRate?: number;
+  phone?: string;
+  calendarColor?: string;
 }
 
 export interface WorkingHour {
@@ -40,6 +47,20 @@ export interface SetWorkingHoursRequest {
 
 export interface LinkServicesRequest {
   serviceIds: string[];
+}
+
+export type CommissionType = 'PERCENT' | 'FIXED';
+
+export interface ServiceCommission {
+  serviceId: string;
+  serviceName: string;
+  commissionType: CommissionType | null;
+  commissionValue: number | null;
+}
+
+export interface SetServiceCommissionRequest {
+  commissionType: CommissionType | null;
+  commissionValue: number | null;
 }
 
 // Backend returns plain ISO strings: "2026-05-29T09:00:00"

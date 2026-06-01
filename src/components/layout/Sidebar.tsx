@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
+import { storage } from '@/utils/storage';
+import { api } from '@/services/api';
 
 interface NavItem {
   href: string;
   label: string;
   icon: JSX.Element;
+  badgeKey?: 'appointments' | 'inventory';
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -29,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/appointments',
     label: 'Agendamentos',
+    badgeKey: 'appointments',
     icon: (
       <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
@@ -85,6 +90,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/inventory',
     label: 'Estoque',
+    badgeKey: 'inventory',
     icon: (
       <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
@@ -125,6 +131,20 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/financeiro',
+    label: 'Financeiro',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+  },
+  {
     href: '/settings',
     label: 'Configurações',
     icon: (
@@ -146,10 +166,33 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+function useSidebarCounts() {
+  const businessId = storage.getBusinessId();
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: apptData } = useSWR(
+    businessId ? ['sidebar-appt-count', businessId, today] : null,
+    () => api.get<{ total: number }>(`/businesses/${businessId}/appointments?date=${today}&limit=1`).then((r) => r.data),
+    { refreshInterval: 5 * 60 * 1000 },
+  );
+
+  const { data: invData } = useSWR(
+    businessId ? ['sidebar-inv-count', businessId] : null,
+    () => api.get<{ total: number }>(`/businesses/${businessId}/inventory?lowStock=true&limit=1`).then((r) => r.data),
+    { refreshInterval: 5 * 60 * 1000 },
+  );
+
+  return {
+    appointments: apptData?.total ?? 0,
+    inventory: invData?.total ?? 0,
+  };
+}
+
 export function Sidebar(): JSX.Element {
   const pathname = usePathname();
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const counts = useSidebarCounts();
 
   return (
     <>
@@ -256,7 +299,18 @@ export function Sidebar(): JSX.Element {
                     style={isActive ? { color: '#ffffff', borderLeftColor: '#0ea5e9' } : undefined}
                   >
                     <span aria-hidden="true">{item.icon}</span>
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.badgeKey && counts[item.badgeKey] > 0 && (
+                      <span
+                        className="ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none"
+                        style={{
+                          background: item.badgeKey === 'inventory' ? '#ef4444' : '#0ea5e9',
+                          color: '#fff',
+                        }}
+                      >
+                        {counts[item.badgeKey] > 99 ? '99+' : counts[item.badgeKey]}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

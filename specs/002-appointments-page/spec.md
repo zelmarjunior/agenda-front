@@ -1,8 +1,8 @@
 # Spec: Página de Agendamentos
 
 **Página**: `/appointments`  
-**Status**: ✅ Especificado | ✅ Implementado | ✅ Testado (parcial)  
-**Última atualização**: 2026-05-29
+**Status**: ✅ Especificado | ✅ Implementado | ✅ Testado (parcial) | 🔄 Atualizado 2026-05-30  
+**Última atualização**: 2026-05-30
 
 ---
 
@@ -63,3 +63,19 @@
 | CONFIRMED | Verde |
 | COMPLETED | Azul |
 | CANCELLED | Vermelho/Cinza |
+
+## Atualizações (2026-05-30)
+
+> A visualização dinâmica do calendário (mês → dia → navegação) é especificada em [specs/front/008-calendar-view](../008-calendar-view/spec.md).
+
+### Valor Previsto e Realizado por Dia
+
+- **FR-APPT-PAGE-007**: Cada dia agrupado na agenda DEVE exibir:
+  - `Valor previsto`: soma dos preços dos serviços dos agendamentos `PENDING` e `CONFIRMED` do dia
+  - `Valor realizado`: soma dos valores dos agendamentos `COMPLETED` do dia
+- **FR-APPT-PAGE-008**: Esses valores DEVEM ser visíveis no cabeçalho de cada grupo de dia e no cabeçalho sticky da visão diária.
+
+### Botões de Ação Rápida
+
+- **FR-APPT-PAGE-009**: Card de agendamento DEVE ter botão de "Confirmar via WhatsApp" que abre link `wa.me` com mensagem pré-formatada.
+- **FR-APPT-PAGE-010**: Perfil do cliente DEVE ter botão "Novo agendamento" que pré-preenche o cliente no formulário de agendamento.

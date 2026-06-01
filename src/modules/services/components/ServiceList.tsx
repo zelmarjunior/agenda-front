@@ -10,6 +10,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/common/Button';
 import { useToast } from '@/context/ToastContext';
 import { ServiceForm } from './ServiceForm';
+import { ServiceProfessionalsModal } from './ServiceProfessionalsModal';
 import { servicesService } from '../services/servicesService';
 import { getApiError } from '@/services/api';
 import { useServices } from '../hooks/useServices';
@@ -27,6 +28,7 @@ export function ServiceList(): JSX.Element {
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Service | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
+  const [profsTarget, setProfsTarget] = useState<Service | null>(null);
 
   function openEdit(s: Service): void {
     setSelected(s);
@@ -42,6 +44,7 @@ export function ServiceList(): JSX.Element {
     name: string;
     description?: string;
     price: number;
+    costPrice?: number;
     durationMinutes: number;
   }): Promise<void> {
     try {
@@ -49,6 +52,7 @@ export function ServiceList(): JSX.Element {
         name: values.name,
         description: values.description || undefined,
         price: values.price,
+        costPrice: values.costPrice || undefined,
         durationMinutes: values.durationMinutes,
       });
       toast('Serviço cadastrado!', 'success');
@@ -63,6 +67,7 @@ export function ServiceList(): JSX.Element {
     name: string;
     description?: string;
     price: number;
+    costPrice?: number;
     durationMinutes: number;
   }): Promise<void> {
     if (!selected) return;
@@ -71,6 +76,7 @@ export function ServiceList(): JSX.Element {
         name: values.name,
         description: values.description || undefined,
         price: values.price,
+        costPrice: values.costPrice || undefined,
         durationMinutes: values.durationMinutes,
       });
       toast('Serviço atualizado!', 'success');
@@ -131,6 +137,9 @@ export function ServiceList(): JSX.Element {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Valor
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
+                  Custo
+                </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Ações
                 </th>
@@ -154,8 +163,14 @@ export function ServiceList(): JSX.Element {
                   <td className="px-4 py-3 text-ocean-on-surface font-semibold">
                     {formatCurrency(s.price)}
                   </td>
+                  <td className="px-4 py-3 text-ocean-on-surface-variant text-sm">
+                    {s.costPrice ? formatCurrency(s.costPrice) : <span className="text-ocean-outline">—</span>}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => setProfsTarget(s)}>
+                        Profissionais
+                      </Button>
                       <Button size="sm" variant="secondary" onClick={() => openEdit(s)}>
                         Editar
                       </Button>
@@ -179,6 +194,15 @@ export function ServiceList(): JSX.Element {
       <Modal open={modal === 'edit'} onClose={closeModal} title="Editar serviço">
         {selected && <ServiceForm initial={selected} onSubmit={handleEdit} onCancel={closeModal} />}
       </Modal>
+
+      {profsTarget && (
+        <ServiceProfessionalsModal
+          serviceId={profsTarget.id}
+          serviceName={profsTarget.name}
+          open={!!profsTarget}
+          onClose={() => setProfsTarget(null)}
+        />
+      )}
 
       <ConfirmModal
         open={!!confirmDelete}

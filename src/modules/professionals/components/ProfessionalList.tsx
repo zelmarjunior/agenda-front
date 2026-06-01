@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Modal } from '@/components/common/Modal';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Pagination } from '@/components/common/Pagination';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -11,23 +12,28 @@ import { useToast } from '@/context/ToastContext';
 import { ProfessionalForm } from './ProfessionalForm';
 import { WorkingHoursForm } from './WorkingHoursForm';
 import { LinkServicesForm } from './LinkServicesForm';
+import { ProfessionalCommissionsModal } from './ProfessionalCommissionsModal';
 import { professionalsService } from '../services/professionalsService';
 import { getApiError } from '@/services/api';
 import { useProfessionals } from '../hooks/useProfessionals';
+import { useBusiness } from '@/modules/business/hooks/useBusiness';
 import { storage } from '@/utils/storage';
 import type { DayOfWeek, Professional } from '@/types/professionals.types';
 
 const LIMIT = 20;
 
-type ModalType = 'create' | 'edit' | 'hours' | 'services' | null;
+type ModalType = 'create' | 'edit' | 'hours' | 'services' | 'commissions' | 'delete' | null;
 
 export function ProfessionalList(): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const { toast } = useToast();
   const { professionals, total, page, setPage, isLoading, error, mutate } = useProfessionals();
+  const business = useBusiness();
+  const soloMode = business?.soloMode ?? storage.getSoloMode();
 
   const [modal, setModal] = useState<ModalType>(null);
   const [selected, setSelected] = useState<Professional | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function open(type: ModalType, p?: Professional): void {
     setSelected(p ?? null);
@@ -108,9 +114,35 @@ export function ProfessionalList(): JSX.Element {
     }
   }
 
+  async function handleDelete(): Promise<void> {
+    if (!selected) return;
+    setDeleting(true);
+    try {
+      await professionalsService.delete(businessId, selected.id);
+      toast('Profissional excluído.', 'success');
+      closeModal();
+      mutate();
+    } catch (err) {
+      toast(getApiError(err), 'error');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        {soloMode ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 inline-block" />
+            Modo profissional único ativo
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-gray-400 inline-block" />
+            Modo multiprofissional
+          </span>
+        )}
         <Button size="sm" onClick={() => open('create')}>
           + Novo profissional
         </Button>
@@ -173,8 +205,14 @@ export function ProfessionalList(): JSX.Element {
                         <Button size="sm" variant="secondary" onClick={() => open('services', p)}>
                           Serviços
                         </Button>
+                        <Button size="sm" variant="secondary" onClick={() => open('commissions', p)}>
+                          Comissões
+                        </Button>
                         <Button size="sm" variant="secondary" onClick={() => open('edit', p)}>
                           Editar
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => open('delete', p)}>
+                          Excluir
                         </Button>
                       </div>
                     </td>
@@ -222,6 +260,23 @@ export function ProfessionalList(): JSX.Element {
           />
         )}
       </Modal>
+
+      <ConfirmModal
+        open={modal === 'delete'}
+        onClose={closeModal}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Excluir profissional"
+        message={`Tem certeza que deseja excluir "${selected?.name}"? O profissional será removido da listagem. Os agendamentos existentes são mantidos no histórico.`}
+        confirmLabel="Excluir"
+      />
+
+      <ProfessionalCommissionsModal
+        professionalId={modal === 'commissions' ? (selected?.id ?? null) : null}
+        professionalName={selected?.name ?? ''}
+        open={modal === 'commissions'}
+        onClose={closeModal}
+      />
     </>
   );
 }

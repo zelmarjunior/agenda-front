@@ -3,9 +3,9 @@
 import dynamic from 'next/dynamic';
 import { Spinner } from '@/components/common/Spinner';
 
-const ProfessionalList = dynamic(
+const ProfessionalsContent = dynamic(
   () =>
-    import('@/modules/professionals/components/ProfessionalList').then((m) => m.ProfessionalList),
+    import('@/modules/professionals/components/ProfessionalsContent').then((m) => m.ProfessionalsContent),
   {
     loading: () => (
       <div className="py-16">
@@ -17,5 +17,5 @@ const ProfessionalList = dynamic(
 );
 
 export default function LazyProfessionalList(): JSX.Element {
-  return <ProfessionalList />;
+  return <ProfessionalsContent />;
 }

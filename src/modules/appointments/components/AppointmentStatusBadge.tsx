@@ -8,7 +8,8 @@ const CONFIG: Record<
   PENDING: { label: 'Pendente', variant: 'warning' },
   CONFIRMED: { label: 'Confirmado', variant: 'success' },
   CANCELLED: { label: 'Cancelado', variant: 'danger' },
-  COMPLETED: { label: 'Concluído', variant: 'info' },
+  COMPLETED: { label: 'Atendido', variant: 'info' },
+  NO_SHOW: { label: 'Não Atendido', variant: 'danger' },
 };
 
 export function AppointmentStatusBadge({ status }: { status: AppointmentStatus }): JSX.Element {

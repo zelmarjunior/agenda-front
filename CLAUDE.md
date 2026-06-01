@@ -37,7 +37,10 @@ specs/
 ├── 004-clients-page/
 ├── 005-inventory-page/
 ├── 006-reports-page/
-└── 007-ai-marketing/
+├── 007-ai-marketing/
+├── 008-calendar-view/        ← NOVO: calendário dinâmico mês/dia
+├── 009-financial-page/       ← NOVO: página financeira completa
+└── 010-client-profile/       ← NOVO: perfil ampliado do cliente
 ```
 
 Cada pasta contém:
@@ -60,6 +63,9 @@ Cada pasta contém:
 | inventory-page | ✅ | ✅ | ⚠️ manual |
 | reports-page | ✅ | ✅ | ⚠️ manual |
 | ai-marketing | ✅* | ✅ | ⚠️ manual |
+| calendar-view | ✅ | ⬜ | ⬜ |
+| financial-page | ✅ | ⬜ | ⬜ |
+| client-profile | ✅ | ⬜ | ⬜ |
 
 > *Spec retroativa — feature foi implementada antes da spec.
 

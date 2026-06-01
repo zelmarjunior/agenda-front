@@ -1,70 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { storage } from '@/utils/storage';
 import { getApiError } from '@/services/api';
 
-const step1Schema = z.object({
-  email: z.string().email('E-mail inválido'),
-});
-
-const step2Schema = z.object({
-  password: z.string().min(1, 'Senha obrigatória'),
-});
-
-type Step1Values = z.infer<typeof step1Schema>;
-type Step2Values = z.infer<typeof step2Schema>;
+function isValidEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
 
 export function LoginForm(): JSX.Element {
-  const { login, isAuthenticated } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+
   const [step, setStep] = useState<1 | 2>(1);
+  const [email, setEmailVal] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) router.replace('/');
-  }, [isAuthenticated, router]);
-  const [email, setEmail] = useState('');
-  const [storedBusiness, setStoredBusiness] = useState<{
-    businessId: string;
-    businessName: string;
-  } | null>(null);
-
-  const form1 = useForm<Step1Values>({ resolver: zodResolver(step1Schema) });
-  const form2 = useForm<Step2Values>({ resolver: zodResolver(step2Schema) });
-
-  function handleStep1(values: Step1Values): void {
-    const last = storage.getLastBusiness();
-    setEmail(values.email);
-    setStoredBusiness(last);
+  function handleContinuar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isValidEmail(email)) {
+      setEmailError('E-mail inválido');
+      return;
+    }
+    setEmailError('');
     setStep(2);
   }
 
-  async function handleStep2(values: Step2Values): Promise<void> {
-    if (!storedBusiness) {
-      toast('Negócio não encontrado. Faça o registro primeiro.', 'error');
-      setStep(1);
-      return;
-    }
+  async function handleEntrar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!password) return;
+    setLoading(true);
     try {
-      await login({ email, password: values.password, businessId: storedBusiness.businessId });
+      let businessId = storage.getLastBusiness()?.businessId ?? null;
+
+      if (!businessId) {
+        const { authService } = await import('@/modules/auth/services/authService');
+        const businesses = await authService.lookupBusinesses(email);
+        if (!businesses.length) {
+          toast('Nenhum negócio encontrado para este e-mail.', 'error');
+          return;
+        }
+        businessId = businesses[0].id;
+        storage.setLastBusiness({ businessId: businesses[0].id, businessName: businesses[0].name });
+      }
+
+      await login({ email, password, businessId });
     } catch (err) {
       toast(getApiError(err), 'error');
+    } finally {
+      setLoading(false);
     }
   }
+
+  const inputCls =
+    'ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface placeholder:text-ocean-outline';
+
+  const btnCls =
+    'w-full bg-ocean-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#004c6e] focus:outline-none focus:ring-2 focus:ring-ocean-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm shadow-ocean-primary/25';
 
   return (
     <div
       className="glass-card rounded-2xl p-8"
       style={{ boxShadow: '0 24px 64px rgba(0,101,145,0.12)' }}
     >
-      {/* Brand mark */}
+      {/* Brand */}
       <div className="flex items-center gap-3 mb-8">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center shadow"
@@ -87,12 +90,9 @@ export function LoginForm(): JSX.Element {
         </div>
       </div>
 
-      {/* Step indicator */}
+      {/* Step bar */}
       <div className="flex items-center gap-2 mb-6">
-        <div
-          className="h-1.5 flex-1 rounded-full transition-all duration-300"
-          style={{ background: '#0ea5e9' }}
-        />
+        <div className="h-1.5 flex-1 rounded-full" style={{ background: '#0ea5e9' }} />
         <div
           className="h-1.5 flex-1 rounded-full transition-all duration-300"
           style={{ background: step === 2 ? '#0ea5e9' : '#bec8d2' }}
@@ -100,12 +100,9 @@ export function LoginForm(): JSX.Element {
       </div>
 
       {step === 1 && (
-        <form onSubmit={form1.handleSubmit(handleStep1)} noValidate>
+        <form onSubmit={handleContinuar} noValidate>
           <div className="mb-5">
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5"
-            >
+            <label htmlFor="email" className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5">
               E-mail
             </label>
             <input
@@ -113,51 +110,37 @@ export function LoginForm(): JSX.Element {
               type="email"
               autoComplete="email"
               autoFocus
-              className="ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface placeholder:text-ocean-outline"
+              className={inputCls}
               placeholder="seu@email.com"
-              {...form1.register('email')}
-              aria-invalid={!!form1.formState.errors.email}
-              aria-describedby={form1.formState.errors.email ? 'email-error' : undefined}
+              value={email}
+              onChange={(e) => { setEmailVal(e.target.value); setEmailError(''); }}
+              aria-invalid={!!emailError}
             />
-            {form1.formState.errors.email && (
-              <p id="email-error" role="alert" className="mt-1.5 text-xs text-ocean-error">
-                {form1.formState.errors.email.message}
-              </p>
+            {emailError && (
+              <p role="alert" className="mt-1.5 text-xs text-ocean-error">{emailError}</p>
             )}
           </div>
-          <button
-            type="submit"
-            disabled={form1.formState.isSubmitting}
-            className="w-full bg-ocean-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#004c6e] focus:outline-none focus:ring-2 focus:ring-ocean-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm shadow-ocean-primary/25"
-          >
+          <button type="submit" disabled={loading} className={btnCls}>
             Continuar →
           </button>
         </form>
       )}
 
       {step === 2 && (
-        <form onSubmit={form2.handleSubmit(handleStep2)} noValidate>
-          {storedBusiness && (
+        <form onSubmit={handleEntrar} noValidate>
+          {storage.getLastBusiness() && (
             <div
               className="mb-5 rounded-xl px-4 py-3 border"
-              style={{
-                background: 'rgba(14,165,233,0.08)',
-                borderColor: 'rgba(14,165,233,0.25)',
-              }}
+              style={{ background: 'rgba(14,165,233,0.08)', borderColor: 'rgba(14,165,233,0.25)' }}
             >
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-ocean-primary">
-                Negócio
-              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-ocean-primary">Negócio</p>
               <p className="text-sm font-bold text-ocean-on-surface mt-0.5">
-                {storedBusiness.businessName}
+                {storage.getLastBusiness()?.businessName}
               </p>
             </div>
           )}
           <div className="mb-5">
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5"
-            >
+            <label htmlFor="password" className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5">
               Senha
             </label>
             <input
@@ -165,24 +148,14 @@ export function LoginForm(): JSX.Element {
               type="password"
               autoComplete="current-password"
               autoFocus
-              className="ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface placeholder:text-ocean-outline"
+              className={inputCls}
               placeholder="••••••••"
-              {...form2.register('password')}
-              aria-invalid={!!form2.formState.errors.password}
-              aria-describedby={form2.formState.errors.password ? 'password-error' : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            {form2.formState.errors.password && (
-              <p id="password-error" role="alert" className="mt-1.5 text-xs text-ocean-error">
-                {form2.formState.errors.password.message}
-              </p>
-            )}
           </div>
-          <button
-            type="submit"
-            disabled={form2.formState.isSubmitting}
-            className="w-full bg-ocean-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#004c6e] focus:outline-none focus:ring-2 focus:ring-ocean-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm shadow-ocean-primary/25"
-          >
-            {form2.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
+          <button type="submit" disabled={loading} className={btnCls}>
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
           <button
             type="button"

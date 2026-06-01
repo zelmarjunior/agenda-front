@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect, useRef } from 'react';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import useSWR from 'swr';
@@ -12,13 +12,23 @@ import { servicesService } from '@/modules/services/services/servicesService';
 import { storage } from '@/utils/storage';
 import { decodeToken } from '@/utils/jwt';
 import { useBusiness } from '@/modules/business/hooks/useBusiness';
-import { generateTimeSlots, toDateStr } from '@/utils/calendar';
+import { generateTimeSlots, toDateStr, formatDayFull } from '@/utils/calendar';
 import { getApiError } from '@/services/api';
+import { getWaTemplate, buildWaMessage, buildWaUrl } from '@/utils/whatsapp';
 import { useToast } from '@/context/ToastContext';
 import type { Appointment } from '@/types/appointments.types';
 import type { Client } from '@/types/clients.types';
 
 const ALL_TIME_SLOTS = generateTimeSlots();
+
+const PAYMENT_METHODS = [
+  { value: '', label: 'Meio de pagamento (opcional)' },
+  { value: 'CASH', label: 'Dinheiro' },
+  { value: 'PIX', label: 'Pix' },
+  { value: 'CREDIT', label: 'Cartão de crédito' },
+  { value: 'DEBIT', label: 'Cartão de débito' },
+  { value: 'OTHER', label: 'Outro' },
+];
 
 const schema = z.object({
   clientId: z.string().min(1, 'Selecione ou crie uma cliente'),
@@ -27,6 +37,7 @@ const schema = z.object({
   date: z.string().min(1, 'Informe a data'),
   time: z.string().min(1, 'Informe o horário'),
   finalPrice: z.string().min(1, 'Informe o valor'),
+  paymentMethod: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -36,6 +47,7 @@ interface AppointmentFormProps {
   prefilledDatetime?: string;
   onSubmit: (scheduledAt: string, values: Omit<FormValues, 'date' | 'time'>) => Promise<void>;
   onCancel: () => void;
+  onOpenRecurring?: (clientId: string) => void;
 }
 
 function parseDatetime(iso?: string): { date: string; time: string } {
@@ -56,6 +68,7 @@ export function AppointmentForm({
   prefilledDatetime,
   onSubmit,
   onCancel,
+  onOpenRecurring,
 }: AppointmentFormProps): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const { toast } = useToast();
@@ -89,6 +102,7 @@ export function AppointmentForm({
         : initial?.service?.price != null
           ? String(Number(initial.service.price).toFixed(2))
           : '',
+      paymentMethod: initial?.paymentMethod ?? '',
     },
   });
 
@@ -97,6 +111,9 @@ export function AppointmentForm({
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [creatingClient, setCreatingClient] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const clientDropdownRef = useRef<HTMLDivElement>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -124,13 +141,33 @@ export function AppointmentForm({
     { revalidateOnFocus: false },
   );
 
+  // ── Close client dropdown on outside click ───────────────────────────────
+  useEffect(() => {
+    function handleClick(e: MouseEvent): void {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target as Node)) {
+        setClientDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // ── Sync client search text when editing an existing appointment ──────────
+  useEffect(() => {
+    if (initial?.client) setClientSearch(initial.client.name);
+  }, [initial]);
+
   // ── Auto-select logged-in professional ────────────────────────────────────
 
   useEffect(() => {
-    if (!profData?.data || !currentUserId || initial) return;
+    if (!profData?.data || initial) return;
     const mine = profData.data.find((p) => p.userId === currentUserId);
-    if (mine) setValue('professionalId', mine.id, { shouldValidate: false });
-  }, [profData?.data, currentUserId, initial, setValue]);
+    if (mine) {
+      setValue('professionalId', mine.id, { shouldValidate: false });
+    } else if (soloMode && profData.data.length > 0) {
+      setValue('professionalId', profData.data[0].id, { shouldValidate: false });
+    }
+  }, [profData?.data, currentUserId, soloMode, initial, setValue]);
 
   // ── Reset time when slot-affecting fields change ──────────────────────────
 
@@ -153,6 +190,13 @@ export function AppointmentForm({
     ...(clientsData?.data ?? []),
     ...extraClients.filter((e) => !(clientsData?.data ?? []).some((c) => c.id === e.id)),
   ];
+
+  const filteredClients = clientSearch.trim()
+    ? allClients.filter((c) =>
+        c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        (c.phone ?? '').includes(clientSearch),
+      )
+    : allClients;
 
   // Build available time options
   const availableTimeSlots: string[] = (() => {
@@ -203,37 +247,116 @@ export function AppointmentForm({
       professionalId: values.professionalId,
       serviceId: values.serviceId,
       finalPrice: values.finalPrice,
+      paymentMethod: values.paymentMethod || undefined,
     });
   }
 
-  const selectedClientName = allClients.find((c) => c.id === watch('clientId'))?.name;
+  function onInvalid(errs: FieldErrors<FormValues>): void {
+    const labels: Partial<Record<keyof FormValues, string>> = {
+      clientId: 'Cliente',
+      professionalId: 'Profissional',
+      serviceId: 'Serviço',
+      date: 'Data',
+      time: 'Horário',
+      finalPrice: 'Valor',
+    };
+    const missing = (Object.keys(errs) as (keyof FormValues)[])
+      .map((k) => labels[k])
+      .filter(Boolean) as string[];
+    toast(
+      missing.length > 0
+        ? `Campos obrigatórios: ${missing.join(', ')}`
+        : 'Preencha todos os campos obrigatórios.',
+      'error',
+    );
+  }
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} noValidate className="space-y-5">
-      {/* ── Client ─────────────────────────────────────────────────────────── */}
+    <form onSubmit={handleSubmit(onFormSubmit, onInvalid)} noValidate className="space-y-5">
+      {/* ── Client (searchable combobox) ───────────────────────────────────── */}
       <div>
-        <label htmlFor="clientId" className={labelCls}>
-          Cliente
-        </label>
-        <select
-          id="clientId"
-          {...register('clientId')}
-          className={inputCls}
-          aria-invalid={!!errors.clientId}
-        >
-          <option value="">Selecionar cliente...</option>
-          {allClients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-              {c.phone ? ` · ${c.phone}` : ''}
-            </option>
-          ))}
-        </select>
+        <label className={labelCls}>Cliente</label>
+        <div className="relative" ref={clientDropdownRef}>
+          <input
+            type="text"
+            value={clientSearch}
+            onChange={(e) => {
+              setClientSearch(e.target.value);
+              setClientDropdownOpen(true);
+              if (!e.target.value) setValue('clientId', '', { shouldValidate: false });
+            }}
+            onFocus={() => setClientDropdownOpen(true)}
+            placeholder="Buscar cliente..."
+            className={inputCls}
+            autoComplete="off"
+            aria-invalid={!!errors.clientId}
+          />
+          {clientDropdownOpen && (
+            <ul className="absolute z-50 w-full mt-1 max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+              {filteredClients.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-gray-400">Nenhuma cliente encontrada</li>
+              ) : (
+                filteredClients.slice(0, 50).map((c) => (
+                  <li
+                    key={c.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setValue('clientId', c.id, { shouldValidate: true });
+                      setClientSearch(c.name);
+                      setClientDropdownOpen(false);
+                    }}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
+                  >
+                    <span className="font-medium text-gray-900">{c.name}</span>
+                    {c.phone && <span className="text-xs text-gray-400 ml-2">{c.phone}</span>}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
         {errors.clientId && (
           <p role="alert" className="mt-1 text-xs text-red-500">
             {errors.clientId.message}
           </p>
         )}
+
+        {/* WhatsApp link — only for future appointments where client has phone */}
+        {(() => {
+          const clientId = watch('clientId');
+          const selectedClient = allClients.find((c) => c.id === clientId);
+          const selectedDate = watch('date');
+          const selectedTime = watch('time');
+          const isFuture = selectedDate && selectedTime
+            ? new Date(`${selectedDate}T${selectedTime}:00`) > new Date()
+            : false;
+          if (!selectedClient?.phone || !isFuture) return null;
+          const template = getWaTemplate(businessId);
+          const svc = svcData?.data.find((s) => s.id === watch('serviceId'));
+          const prof = (profData?.data ?? []).find((p) => p.id === watch('professionalId'));
+          const message = buildWaMessage(template, {
+            nome: selectedClient.name,
+            apelido: selectedClient.name.split(' ')[0],
+            horario: selectedTime,
+            data: formatDayFull(selectedDate),
+            servico: svc?.name ?? '',
+            profissional: prof?.name ?? '',
+          });
+          const waUrl = buildWaUrl(selectedClient.phone, message);
+          return (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+              </svg>
+              Enviar mensagem no WhatsApp
+            </a>
+          );
+        })()}
 
         {!showNewClient ? (
           <button
@@ -451,20 +574,50 @@ export function AppointmentForm({
         )}
       </div>
 
-      {/* ── Summary ────────────────────────────────────────────────────────── */}
-      {selectedClientName && slotsStatus !== 'empty' && (
-        <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 text-xs text-gray-600">
-          <span className="font-semibold text-gray-800">{selectedClientName}</span> será agendada
-        </div>
-      )}
+      {/* ── Payment Method ─────────────────────────────────────────────────── */}
+      <div>
+        <label htmlFor="paymentMethod" className={labelCls}>
+          Meio de pagamento
+        </label>
+        <select
+          id="paymentMethod"
+          {...register('paymentMethod')}
+          className={inputCls}
+        >
+          {PAYMENT_METHODS.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <div className="flex justify-end gap-3 pt-1 border-t border-gray-100">
-        <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit" size="sm" loading={isSubmitting} disabled={slotsStatus === 'empty'}>
-          {initial ? 'Reagendar' : 'Confirmar agendamento'}
-        </Button>
+      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+        {onOpenRecurring ? (
+          <button
+            type="button"
+            onClick={() => {
+              const clientId = watch('clientId');
+              if (clientId) onOpenRecurring(clientId);
+            }}
+            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors focus:outline-none"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Agendamento recorrente
+          </button>
+        ) : (
+          <span />
+        )}
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" size="sm" loading={isSubmitting} disabled={slotsStatus === 'empty'}>
+            {initial ? 'Reagendar' : 'Confirmar agendamento'}
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Modal } from '@/components/common/Modal';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Pagination } from '@/components/common/Pagination';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -25,8 +26,9 @@ export function ClientList(): JSX.Element {
   const { clients, total, page, setPage, search, setSearch, isLoading, error, mutate } =
     useClients();
 
-  const [modal, setModal] = useState<'create' | 'edit' | 'history' | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'history' | 'delete' | null>(null);
   const [selected, setSelected] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function openEdit(c: Client): void {
     setSelected(c);
@@ -38,21 +40,47 @@ export function ClientList(): JSX.Element {
     setModal('history');
   }
 
+  function openDelete(c: Client): void {
+    setSelected(c);
+    setModal('delete');
+  }
+
   function closeModal(): void {
     setModal(null);
     setSelected(null);
   }
 
+  async function handleDelete(): Promise<void> {
+    if (!selected) return;
+    setDeleting(true);
+    try {
+      await clientsService.delete(businessId, selected.id);
+      toast('Cliente excluído.', 'success');
+      closeModal();
+      mutate();
+    } catch (err) {
+      toast(getApiError(err), 'error');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function handleCreate(values: {
     name: string;
+    nickname?: string;
     phone?: string;
     email?: string;
+    cpf?: string;
+    birthDate?: string;
   }): Promise<void> {
     try {
       await clientsService.create(businessId, {
         name: values.name,
+        nickname: values.nickname || undefined,
         phone: values.phone || undefined,
         email: values.email || undefined,
+        cpf: values.cpf || undefined,
+        birthDate: values.birthDate || undefined,
       });
       toast('Cliente cadastrado!', 'success');
       closeModal();
@@ -64,15 +92,21 @@ export function ClientList(): JSX.Element {
 
   async function handleEdit(values: {
     name: string;
+    nickname?: string;
     phone?: string;
     email?: string;
+    cpf?: string;
+    birthDate?: string;
   }): Promise<void> {
     if (!selected) return;
     try {
       await clientsService.update(businessId, selected.id, {
         name: values.name,
+        nickname: values.nickname || undefined,
         phone: values.phone || undefined,
         email: values.email || undefined,
+        cpf: values.cpf || undefined,
+        birthDate: values.birthDate || undefined,
       });
       toast('Cliente atualizado!', 'success');
       closeModal();
@@ -158,6 +192,9 @@ export function ClientList(): JSX.Element {
                       <Button size="sm" variant="secondary" onClick={() => openEdit(c)}>
                         Editar
                       </Button>
+                      <Button size="sm" variant="danger" onClick={() => openDelete(c)}>
+                        Excluir
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -184,6 +221,16 @@ export function ClientList(): JSX.Element {
       >
         {selected && <ClientHistory client={selected} />}
       </Modal>
+
+      <ConfirmModal
+        open={modal === 'delete'}
+        onClose={closeModal}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Excluir cliente"
+        message={`Tem certeza que deseja excluir "${selected?.name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+      />
     </>
   );
 }

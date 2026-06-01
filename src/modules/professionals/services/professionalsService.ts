@@ -5,6 +5,8 @@ import type {
   CreateProfessionalRequest,
   LinkServicesRequest,
   Professional,
+  ServiceCommission,
+  SetServiceCommissionRequest,
   SetWorkingHoursRequest,
   UpdateProfessionalRequest,
   WorkingHour,
@@ -66,6 +68,29 @@ export const professionalsService = {
     data: LinkServicesRequest,
   ): Promise<void> {
     await api.put(`/businesses/${businessId}/professionals/${professionalId}/services`, data);
+  },
+
+  async delete(businessId: string, professionalId: string): Promise<void> {
+    await api.delete(`/businesses/${businessId}/professionals/${professionalId}`);
+  },
+
+  async getCommissions(businessId: string, professionalId: string): Promise<ServiceCommission[]> {
+    const response = await api.get<SuccessResponse<ServiceCommission[]>>(
+      `/businesses/${businessId}/professionals/${professionalId}/commissions`,
+    );
+    return response.data.data;
+  },
+
+  async setCommission(
+    businessId: string,
+    professionalId: string,
+    serviceId: string,
+    data: SetServiceCommissionRequest,
+  ): Promise<void> {
+    await api.patch(
+      `/businesses/${businessId}/professionals/${professionalId}/commissions/${serviceId}`,
+      data,
+    );
   },
 
   async availableSlots(

@@ -6,6 +6,7 @@ import type {
   Product,
   ProductFilters,
   StockAdjustmentRequest,
+  StockForecastItem,
 } from '@/types/inventory.types';
 
 export const inventoryService = {
@@ -50,5 +51,19 @@ export const inventoryService = {
     data: StockAdjustmentRequest,
   ): Promise<void> {
     await api.post(`/businesses/${businessId}/products/${productId}/stock-adjustment`, data);
+  },
+
+  async getForecast(businessId: string): Promise<StockForecastItem[]> {
+    const response = await api.get<StockForecastItem[]>(
+      `/businesses/${businessId}/products/forecast`,
+    );
+    return response.data;
+  },
+
+  async getLowStock(businessId: string): Promise<Product[]> {
+    const response = await api.get<SuccessResponse<PaginatedResponse<Product>>>(
+      `/businesses/${businessId}/products?lowStock=true&limit=50`,
+    );
+    return response.data.data.data;
   },
 };

@@ -5,6 +5,8 @@ import type {
   AppointmentFilters,
   CancelAppointmentRequest,
   CreateAppointmentRequest,
+  CreateRecurringRuleRequest,
+  RecurringRule,
   RescheduleAppointmentRequest,
   UpdateAppointmentRequest,
 } from '@/types/appointments.types';
@@ -75,6 +77,47 @@ export const appointmentsService = {
     const response = await api.patch<SuccessResponse<Appointment>>(
       `/businesses/${businessId}/appointments/${appointmentId}`,
       data,
+    );
+    return response.data.data;
+  },
+
+  async createRecurring(
+    businessId: string,
+    data: CreateRecurringRuleRequest,
+  ): Promise<{ rule: RecurringRule; created: Appointment[]; conflicts: string[] }> {
+    const response = await api.post<SuccessResponse<{ rule: RecurringRule; created: Appointment[]; conflicts: string[] }>>(
+      `/businesses/${businessId}/appointments/recurring`,
+      data,
+    );
+    return response.data.data;
+  },
+
+  async getRecurringRules(businessId: string): Promise<RecurringRule[]> {
+    const response = await api.get<SuccessResponse<RecurringRule[]>>(
+      `/businesses/${businessId}/appointments/recurring`,
+    );
+    return response.data.data;
+  },
+
+  async cancelRecurringRule(businessId: string, ruleId: string): Promise<{ cancelled: number }> {
+    const response = await api.delete<SuccessResponse<{ cancelled: number }>>(
+      `/businesses/${businessId}/appointments/recurring/${ruleId}`,
+    );
+    return response.data.data;
+  },
+
+  async noShow(businessId: string, appointmentId: string, reason: string): Promise<void> {
+    await api.patch(`/businesses/${businessId}/appointments/${appointmentId}/no-show`, { reason });
+  },
+
+  async addService(
+    businessId: string,
+    appointmentId: string,
+    serviceId: string,
+  ): Promise<Appointment> {
+    const response = await api.post<SuccessResponse<Appointment>>(
+      `/businesses/${businessId}/appointments/${appointmentId}/add-service`,
+      { serviceId },
     );
     return response.data.data;
   },

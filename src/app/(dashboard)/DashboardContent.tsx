@@ -1,12 +1,19 @@
 'use client';
 
+import { useMemo } from 'react';
+import useSWR from 'swr';
 import { Header } from '@/components/layout/Header';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { useAppointments } from '@/modules/appointments/hooks/useAppointments';
 import { useProfessionals } from '@/modules/professionals/hooks/useProfessionals';
 import { useClients } from '@/modules/clients/hooks/useClients';
+import { PendingPaymentsPanel } from '@/modules/reports/components/PendingPaymentsPanel';
+import { HeatmapPanel } from '@/modules/reports/components/HeatmapPanel';
+import { inventoryService } from '@/modules/inventory/services/inventoryService';
 import { formatDate, formatDateTime } from '@/utils/formatters';
+import { getDashboardWidgets } from '@/utils/dashboardConfig';
+import { storage } from '@/utils/storage';
 import type { AppointmentStatus } from '@/types/appointments.types';
 
 const STATUS_BADGE: Record<
@@ -16,7 +23,8 @@ const STATUS_BADGE: Record<
   PENDING: { label: 'Pendente', variant: 'warning' },
   CONFIRMED: { label: 'Confirmado', variant: 'success' },
   CANCELLED: { label: 'Cancelado', variant: 'danger' },
-  COMPLETED: { label: 'Concluído', variant: 'info' },
+  COMPLETED: { label: 'Atendido', variant: 'info' },
+  NO_SHOW: { label: 'Não Atendido', variant: 'danger' },
 };
 
 interface StatCard {
@@ -28,6 +36,9 @@ interface StatCard {
 }
 
 export function DashboardContent(): JSX.Element {
+  const businessId = storage.getBusinessId()!;
+  const widgets = useMemo(() => getDashboardWidgets(businessId), [businessId]);
+
   const today = new Date().toISOString().split('T')[0];
   const { appointments: todayAppts, isLoading: loadingAppts } = useAppointments({
     date: today,
@@ -35,6 +46,12 @@ export function DashboardContent(): JSX.Element {
   });
   const { professionals, isLoading: loadingProfs } = useProfessionals();
   const { total: totalClients, isLoading: loadingClients } = useClients();
+
+  const { data: lowStockProducts } = useSWR(
+    widgets.lowStock ? ['low-stock', businessId] : null,
+    () => inventoryService.getLowStock(businessId),
+    { refreshInterval: 5 * 60 * 1000 },
+  );
 
   const pendingCount = todayAppts.filter((a) => a.status === 'PENDING').length;
   const confirmedCount = todayAppts.filter((a) => a.status === 'CONFIRMED').length;
@@ -147,8 +164,37 @@ export function DashboardContent(): JSX.Element {
         ))}
       </div>
 
+      {/* Low stock alert */}
+      {widgets.lowStock && lowStockProducts && lowStockProducts.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/80 px-5 py-4 flex items-start gap-3">
+          <svg className="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-red-700 mb-1.5">
+              Estoque baixo — {lowStockProducts.length} produto{lowStockProducts.length !== 1 ? 's' : ''} precisam de reposição
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {lowStockProducts.map((p) => (
+                <span key={p.id} className="rounded-full bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                  {p.name} — {p.currentStock} {p.unit}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reports panels */}
+      {(widgets.pendingPayments || widgets.heatmap) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {widgets.pendingPayments && <PendingPaymentsPanel />}
+          {widgets.heatmap && <HeatmapPanel />}
+        </div>
+      )}
+
       {/* Today's schedule */}
-      <div className="glass-card rounded-2xl overflow-hidden">
+      {widgets.schedule && <div className="glass-card rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-ocean-outline-variant/30 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ocean-on-surface">Agenda de hoje</h2>
           <span className="text-xs font-medium text-ocean-secondary">{formatDate(new Date())}</span>
@@ -199,7 +245,7 @@ export function DashboardContent(): JSX.Element {
             })}
           </ul>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

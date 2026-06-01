@@ -1,6 +1,6 @@
 import { api } from '@/services/api';
 import type { SuccessResponse, PaginatedResponse, PaginationParams } from '@/types/api.types';
-import type { CreateServiceRequest, Service } from '@/types/services.types';
+import type { CreateServiceRequest, Service, ServiceProfessional } from '@/types/services.types';
 import type { LinkProductsToServiceRequest } from '@/types/services.types';
 
 export const servicesService = {
@@ -47,5 +47,23 @@ export const servicesService = {
     data: LinkProductsToServiceRequest,
   ): Promise<void> {
     await api.put(`/businesses/${businessId}/services/${serviceId}/products`, data);
+  },
+
+  async getProfessionals(businessId: string, serviceId: string): Promise<ServiceProfessional[]> {
+    const response = await api.get<{ data: ServiceProfessional[] }>(
+      `/businesses/${businessId}/services/${serviceId}/professionals`,
+    );
+    return response.data.data;
+  },
+
+  async toggleProfessional(
+    businessId: string,
+    serviceId: string,
+    professionalId: string,
+  ): Promise<{ linked: boolean }> {
+    const response = await api.patch<{ data: { linked: boolean } }>(
+      `/businesses/${businessId}/services/${serviceId}/professionals/${professionalId}/toggle`,
+    );
+    return response.data.data;
   },
 };

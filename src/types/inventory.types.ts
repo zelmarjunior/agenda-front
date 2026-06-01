@@ -36,3 +36,15 @@ export interface ProductFilters {
   page?: number;
   limit?: number;
 }
+
+export interface StockForecastItem {
+  productId: string;
+  productName: string;
+  unit: string;
+  currentStock: number;
+  minimumStock: number;
+  futureConsumption: number;
+  futureAppointments: number;
+  willStockout: boolean;
+  deficit: number;
+}

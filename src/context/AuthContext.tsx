@@ -16,21 +16,20 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const EMPTY_STATE: AuthState = { token: null, businessId: null, role: null, professionalId: null, mustChangePassword: false, isAuthenticated: false };
+
 function buildAuthState(): AuthState {
   const token = storage.getToken();
-  if (!token) return { token: null, businessId: null, role: null, isAuthenticated: false };
+  if (!token) return EMPTY_STATE;
   const payload = decodeToken(token);
-  if (!payload) {
-    storage.removeToken();
-    return { token: null, businessId: null, role: null, isAuthenticated: false };
-  }
-  // Sync the auth cookie so the middleware can detect this session.
-  // Needed when the token exists in localStorage but the cookie was cleared.
+  if (!payload) { storage.removeToken(); return EMPTY_STATE; }
   storage.setToken(token);
   return {
     token,
     businessId: payload.businessId,
     role: (payload.roles?.[0] ?? null) as AuthState['role'],
+    professionalId: payload.professionalId ?? null,
+    mustChangePassword: payload.mustChangePassword ?? false,
     isAuthenticated: true,
   };
 }
@@ -41,18 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
   const login = useCallback(
     async (data: LoginRequest) => {
-      const { token } = await authService.login(data);
+      const { token, mustChangePassword } = await authService.login(data);
       storage.setToken(token);
       const payload = decodeToken(token);
       if (payload) {
         storage.setBusinessId(payload.businessId);
-        // Fetch and cache solo mode so AppointmentForm doesn't need an extra request
         businessService.get(payload.businessId)
           .then((biz) => storage.setSoloMode(biz.soloMode))
           .catch(() => {});
       }
       setAuth(buildAuthState());
-      router.push('/');
+      router.push(mustChangePassword ? '/trocar-senha' : '/');
     },
     [router],
   );
@@ -78,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
   const logout = useCallback(() => {
     storage.clearAll();
-    setAuth({ token: null, businessId: null, role: null, isAuthenticated: false });
+    setAuth(EMPTY_STATE);
     router.push('/login');
   }, [router]);
 

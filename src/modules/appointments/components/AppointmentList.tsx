@@ -11,6 +11,7 @@ import { useToast } from '@/context/ToastContext';
 import { AppointmentStatusBadge } from './AppointmentStatusBadge';
 import { AppointmentForm } from './AppointmentForm';
 import { CancelForm } from './CancelForm';
+import { NoShowForm } from './NoShowForm';
 import { appointmentsService } from '../services/appointmentsService';
 import { getApiError } from '@/services/api';
 import { useAppointments } from '../hooks/useAppointments';
@@ -22,8 +23,9 @@ const STATUS_OPTIONS: { value: AppointmentStatus | ''; label: string }[] = [
   { value: '', label: 'Todos os status' },
   { value: 'PENDING', label: 'Pendente' },
   { value: 'CONFIRMED', label: 'Confirmado' },
+  { value: 'COMPLETED', label: 'Atendido' },
   { value: 'CANCELLED', label: 'Cancelado' },
-  { value: 'COMPLETED', label: 'Concluído' },
+  { value: 'NO_SHOW', label: 'Não Atendido' },
 ];
 
 const LIMIT = 20;
@@ -37,7 +39,7 @@ export function AppointmentList(): JSX.Element {
     limit: LIMIT,
   });
 
-  const [modal, setModal] = useState<'create' | 'edit' | 'cancel' | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'cancel' | 'noshow' | null>(null);
   const [selected, setSelected] = useState<Appointment | null>(null);
 
   const page = filters.page ?? 1;
@@ -111,6 +113,18 @@ export function AppointmentList(): JSX.Element {
     try {
       await appointmentsService.cancel(businessId, selected.id, { reason });
       toast('Agendamento cancelado.', 'success');
+      closeModal();
+      mutate();
+    } catch (err) {
+      toast(getApiError(err), 'error');
+    }
+  }
+
+  async function handleNoShow(reason: string): Promise<void> {
+    if (!selected) return;
+    try {
+      await appointmentsService.noShow(businessId, selected.id, reason);
+      toast('Marcado como não atendido.', 'success');
       closeModal();
       mutate();
     } catch (err) {
@@ -217,6 +231,15 @@ export function AppointmentList(): JSX.Element {
                             Concluir
                           </Button>
                         )}
+                        {(appt.status === 'PENDING' || appt.status === 'CONFIRMED' || appt.status === 'COMPLETED') && (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => { setSelected(appt); setModal('noshow'); }}
+                          >
+                            Não Atendido
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -248,6 +271,11 @@ export function AppointmentList(): JSX.Element {
       {/* Cancel modal */}
       <Modal open={modal === 'cancel'} onClose={closeModal} title="Cancelar agendamento" size="sm">
         <CancelForm onSubmit={handleCancel} onCancel={closeModal} />
+      </Modal>
+
+      {/* No-show modal */}
+      <Modal open={modal === 'noshow'} onClose={closeModal} title="Não Atendido" size="sm">
+        <NoShowForm onSubmit={handleNoShow} onCancel={closeModal} />
       </Modal>
     </>
   );

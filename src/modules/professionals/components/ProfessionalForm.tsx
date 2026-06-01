@@ -12,6 +12,8 @@ interface FormValues {
   password?: string;
   specialty?: string;
   commissionRate?: number;
+  phone?: string;
+  calendarColor?: string;
 }
 
 interface ProfessionalFormProps {
@@ -38,6 +40,8 @@ export function ProfessionalForm({
     password: isCreate ? z.string().min(6, 'Mínimo 6 caracteres') : z.string().optional(),
     specialty: z.string().optional(),
     commissionRate: z.coerce.number().min(0).max(100).optional(),
+    phone: z.string().optional(),
+    calendarColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor inválida').optional().or(z.literal('')),
   });
 
   const {
@@ -51,6 +55,8 @@ export function ProfessionalForm({
           name: initial.name,
           specialty: initial.specialty ?? '',
           commissionRate: initial.commissionRate ?? undefined,
+          phone: initial.phone ?? '',
+          calendarColor: initial.calendarColor ?? '',
         }
       : {},
   });
@@ -144,6 +150,39 @@ export function ProfessionalForm({
         {errors.commissionRate && (
           <p role="alert" className="mt-1 text-xs text-red-600">
             {errors.commissionRate.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+          Telefone
+        </label>
+        <input
+          id="phone"
+          type="tel"
+          {...register('phone')}
+          className={inputCls}
+          placeholder="(11) 99999-9999"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="calendarColor" className="block text-sm font-medium text-gray-700 mb-1">
+          Cor no calendário
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            id="calendarColor"
+            type="color"
+            {...register('calendarColor')}
+            className="h-9 w-16 cursor-pointer rounded-lg border border-gray-300 p-0.5"
+          />
+          <span className="text-xs text-gray-500">Cor usada para identificar o profissional na agenda</span>
+        </div>
+        {errors.calendarColor && (
+          <p role="alert" className="mt-1 text-xs text-red-600">
+            {errors.calendarColor.message}
           </p>
         )}
       </div>

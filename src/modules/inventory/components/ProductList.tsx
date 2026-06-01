@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import useSWR from 'swr';
 import { Modal } from '@/components/common/Modal';
 import { Pagination } from '@/components/common/Pagination';
 import { Spinner } from '@/components/common/Spinner';
@@ -15,7 +16,7 @@ import { inventoryService } from '../services/inventoryService';
 import { getApiError } from '@/services/api';
 import { useInventory } from '../hooks/useInventory';
 import { storage } from '@/utils/storage';
-import type { Product, ProductType } from '@/types/inventory.types';
+import type { Product, ProductType, StockForecastItem } from '@/types/inventory.types';
 
 const LIMIT = 20;
 
@@ -43,6 +44,18 @@ export function ProductList(): JSX.Element {
 
   const [modal, setModal] = useState<'create' | 'edit' | 'adjust' | null>(null);
   const [selected, setSelected] = useState<Product | null>(null);
+
+  const { data: forecastData } = useSWR(
+    ['stock-forecast', businessId],
+    () => inventoryService.getForecast(businessId),
+    { refreshInterval: 5 * 60 * 1000 },
+  );
+
+  const forecastMap = useMemo<Map<string, StockForecastItem>>(() => {
+    const map = new Map<string, StockForecastItem>();
+    forecastData?.forEach((f) => map.set(f.productId, f));
+    return map;
+  }, [forecastData]);
 
   function openEdit(p: Product): void {
     setSelected(p);
@@ -104,8 +117,49 @@ export function ProductList(): JSX.Element {
     }
   }
 
+  // Products that are low stock OR will stockout soon
+  const alertProducts = products.filter(
+    (p) => p.isLowStock || forecastMap.get(p.id)?.willStockout,
+  );
+
   return (
     <>
+      {/* Low stock alert banner */}
+      {alertProducts.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 flex items-start gap-3">
+          <svg className="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-red-700">
+              {alertProducts.length} produto{alertProducts.length !== 1 ? 's' : ''} precisam de atenção
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {alertProducts.map((p) => {
+                const f = forecastMap.get(p.id);
+                return (
+                  <span
+                    key={p.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-medium text-red-700"
+                  >
+                    {p.name}
+                    {f?.willStockout
+                      ? ` — faltará ${f.deficit.toFixed(1)} ${p.unit}`
+                      : ` — ${p.currentStock} ${p.unit} (mín. ${p.minimumStock})`}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          <button
+            onClick={() => { setLowStock(true); setPage(1); }}
+            className="shrink-0 text-xs text-red-600 hover:text-red-700 font-semibold underline focus:outline-none"
+          >
+            Ver todos
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3 mb-4">
         <select
           value={type ?? ''}
@@ -171,6 +225,9 @@ export function ProductList(): JSX.Element {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Mínimo
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
+                  Previsão
+                </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Ações
                 </th>
@@ -194,6 +251,22 @@ export function ProductList(): JSX.Element {
                   </td>
                   <td className="px-4 py-3 text-ocean-on-surface-variant">
                     {p.minimumStock} {p.unit}
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const f = forecastMap.get(p.id);
+                      if (!f || f.futureAppointments === 0) return <span className="text-ocean-outline text-xs">—</span>;
+                      if (f.willStockout) return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                          ⚠ Falta {f.deficit.toFixed(1)} {p.unit}
+                        </span>
+                      );
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                          ✓ {f.futureAppointments} ag.
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">

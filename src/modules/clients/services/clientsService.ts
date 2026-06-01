@@ -1,6 +1,6 @@
 import { api } from '@/services/api';
 import type { SuccessResponse, PaginatedResponse } from '@/types/api.types';
-import type { Client, CreateClientRequest } from '@/types/clients.types';
+import type { Client, CreateClientRequest, ClientSummary } from '@/types/clients.types';
 import type { Appointment } from '@/types/appointments.types';
 
 interface ClientListParams {
@@ -42,6 +42,17 @@ export const clientsService = {
 
   async update(businessId: string, clientId: string, data: CreateClientRequest): Promise<void> {
     await api.put(`/businesses/${businessId}/clients/${clientId}`, data);
+  },
+
+  async delete(businessId: string, clientId: string): Promise<void> {
+    await api.delete(`/businesses/${businessId}/clients/${clientId}`);
+  },
+
+  async getSummary(businessId: string, clientId: string): Promise<ClientSummary> {
+    const response = await api.get<SuccessResponse<ClientSummary>>(
+      `/businesses/${businessId}/clients/${clientId}/summary`,
+    );
+    return response.data.data;
   },
 
   async appointments(

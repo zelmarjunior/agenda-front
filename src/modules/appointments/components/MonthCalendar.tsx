@@ -9,6 +9,7 @@ const STATUS_DOT: Record<AppointmentStatus, string> = {
   CONFIRMED: 'bg-ocean-accent',
   COMPLETED: 'bg-ocean-tertiary',
   CANCELLED: 'bg-ocean-outline-variant',
+  NO_SHOW: 'bg-red-400',
 };
 
 const BADGE_CLS: Record<AppointmentStatus, string> = {
@@ -16,21 +17,29 @@ const BADGE_CLS: Record<AppointmentStatus, string> = {
   CONFIRMED: 'bg-[#0ea5e9]/15 text-ocean-primary',
   COMPLETED: 'bg-ocean-surface-container-low text-ocean-tertiary',
   CANCELLED: 'bg-ocean-surface-container text-ocean-secondary',
+  NO_SHOW: 'bg-red-100 text-red-600',
 };
 
 function dominantStatus(appts: Appointment[]): AppointmentStatus {
   if (appts.some((a) => a.status === 'PENDING')) return 'PENDING';
   if (appts.some((a) => a.status === 'CONFIRMED')) return 'CONFIRMED';
+  if (appts.some((a) => a.status === 'NO_SHOW')) return 'NO_SHOW';
   if (appts.some((a) => a.status === 'COMPLETED')) return 'COMPLETED';
   return 'CANCELLED';
 }
 
 const DAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
+interface DayValue {
+  predicted: number;
+  realized: number;
+}
+
 interface MonthCalendarProps {
   year: number;
   month: number;
   byDate: Map<string, Appointment[]>;
+  byDateValue?: Map<string, DayValue>;
   selectedDate: string | null;
   onDaySelect: (date: string) => void;
   onPrevMonth: () => void;
@@ -42,6 +51,7 @@ export function MonthCalendar({
   year,
   month,
   byDate,
+  byDateValue,
   selectedDate,
   onDaySelect,
   onPrevMonth,
@@ -108,6 +118,7 @@ export function MonthCalendar({
           <div key={wi} className="grid grid-cols-7">
             {week.map((day) => {
               const appts = byDate.get(day.dateStr) ?? [];
+              const dayVal = byDateValue?.get(day.dateStr);
               const isSelected = day.dateStr === selectedDate;
               const isToday = day.dateStr === today;
 
@@ -139,7 +150,7 @@ export function MonthCalendar({
                   </span>
 
                   {appts.length > 0 && (
-                    <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex flex-col items-center gap-0.5 w-full px-0.5">
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-tight ${BADGE_CLS[dominantStatus(appts)]}`}
                       >
@@ -147,12 +158,16 @@ export function MonthCalendar({
                       </span>
                       <div className="flex items-center gap-0.5">
                         {appts.slice(0, 3).map((a, i) => (
-                          <span
-                            key={i}
-                            className={`w-1 h-1 rounded-full ${STATUS_DOT[a.status]}`}
-                          />
+                          <span key={i} className={`w-1 h-1 rounded-full ${STATUS_DOT[a.status]}`} />
                         ))}
                       </div>
+                      {dayVal && (dayVal.predicted > 0 || dayVal.realized > 0) && (
+                        <span className="text-[9px] leading-tight text-center text-ocean-secondary truncate w-full">
+                          {dayVal.realized > 0
+                            ? `R$${dayVal.realized.toFixed(0)}`
+                            : `~R$${dayVal.predicted.toFixed(0)}`}
+                        </span>
+                      )}
                     </div>
                   )}
                 </button>

@@ -10,6 +10,7 @@ const schema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
   description: z.string().optional(),
   price: z.coerce.number().min(0, 'Valor deve ser positivo'),
+  costPrice: z.coerce.number().min(0).optional(),
   durationMinutes: z.coerce.number().int().min(5, 'Mínimo 5 minutos'),
 });
 
@@ -36,6 +37,7 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
           name: initial.name,
           description: initial.description ?? '',
           price: initial.price,
+          costPrice: initial.costPrice ?? undefined,
           durationMinutes: initial.durationMinutes,
         }
       : {},
@@ -76,7 +78,7 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-            Valor (R$)
+            Preço de venda (R$)
           </label>
           <input
             id="price"
@@ -94,24 +96,39 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
           )}
         </div>
         <div>
-          <label htmlFor="durationMinutes" className="block text-sm font-medium text-gray-700 mb-1">
-            Duração (min)
+          <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-1">
+            Preço de custo (R$)
           </label>
           <input
-            id="durationMinutes"
+            id="costPrice"
             type="number"
-            min="5"
-            step="5"
-            {...register('durationMinutes')}
+            step="0.01"
+            min="0"
+            {...register('costPrice')}
             className={inputCls}
-            aria-invalid={!!errors.durationMinutes}
+            placeholder="Opcional"
           />
-          {errors.durationMinutes && (
-            <p role="alert" className="mt-1 text-xs text-red-600">
-              {errors.durationMinutes.message}
-            </p>
-          )}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="durationMinutes" className="block text-sm font-medium text-gray-700 mb-1">
+          Duração (min)
+        </label>
+        <input
+          id="durationMinutes"
+          type="number"
+          min="5"
+          step="5"
+          {...register('durationMinutes')}
+          className={inputCls}
+          aria-invalid={!!errors.durationMinutes}
+        />
+        {errors.durationMinutes && (
+          <p role="alert" className="mt-1 text-xs text-red-600">
+            {errors.durationMinutes.message}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 pt-2">
