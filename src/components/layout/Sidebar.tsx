@@ -117,8 +117,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    href: '/reports',
-    label: 'Relatórios',
+    href: '/okrs',
+    label: 'OKRs',
     icon: (
       <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
@@ -178,7 +178,7 @@ function useSidebarCounts() {
 
   const { data: invData } = useSWR(
     businessId ? ['sidebar-inv-count', businessId] : null,
-    () => api.get<{ total: number }>(`/businesses/${businessId}/inventory?lowStock=true&limit=1`).then((r) => r.data),
+    () => api.get<{ total: number }>(`/businesses/${businessId}/products?lowStock=true&limit=1`).then((r) => r.data),
     { refreshInterval: 5 * 60 * 1000 },
   );
 

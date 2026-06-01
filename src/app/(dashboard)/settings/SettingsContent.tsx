@@ -26,6 +26,7 @@ import {
   saveDashboardWidgets,
   WIDGET_LABELS,
   type DashboardWidgets,
+  type BoolWidgetKey,
 } from '@/utils/dashboardConfig';
 
 const schema = z.object({
@@ -137,8 +138,14 @@ export function SettingsContent(): JSX.Element {
     ? buildWaUrl(business.phone, previewMessage)
     : null;
 
-  function toggleWidget(key: keyof DashboardWidgets, value: boolean): void {
+  function toggleWidget(key: BoolWidgetKey, value: boolean): void {
     const next = { ...dashWidgets, [key]: value };
+    setDashWidgets(next);
+    saveDashboardWidgets(businessId, next);
+  }
+
+  function setUpcomingDays(days: number): void {
+    const next = { ...dashWidgets, upcomingDaysCount: Math.max(1, Math.min(30, days)) };
     setDashWidgets(next);
     saveDashboardWidgets(businessId, next);
   }
@@ -276,18 +283,34 @@ export function SettingsContent(): JSX.Element {
               Escolha quais painéis aparecem na sua tela inicial. As alterações são salvas automaticamente.
             </p>
             <div className="space-y-3">
-              {(Object.keys(WIDGET_LABELS) as (keyof DashboardWidgets)[]).map((key) => (
-                <div key={key} className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0">
-                  <p className="text-sm font-medium text-gray-700">{WIDGET_LABELS[key]}</p>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={dashWidgets[key]}
-                      onChange={(e) => toggleWidget(key, e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+              {(Object.keys(WIDGET_LABELS) as BoolWidgetKey[]).map((key) => (
+                <div key={key}>
+                  <div className="flex items-center justify-between py-2.5 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-700">{WIDGET_LABELS[key]}</p>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={dashWidgets[key]}
+                        onChange={(e) => toggleWidget(key, e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  {key === 'upcomingAppointments' && dashWidgets.upcomingAppointments && (
+                    <div className="flex items-center gap-3 py-2.5 pl-3 border-b border-gray-100">
+                      <p className="text-sm text-gray-600 flex-1">Quantos dias à frente mostrar</p>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={dashWidgets.upcomingDaysCount}
+                        onChange={(e) => setUpcomingDays(parseInt(e.target.value) || 7)}
+                        className="w-16 rounded-lg border border-gray-300 px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-500">dias</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

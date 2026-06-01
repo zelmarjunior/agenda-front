@@ -3,14 +3,22 @@ export interface DashboardWidgets {
   pendingPayments: boolean;
   heatmap: boolean;
   lowStock: boolean;
+  upcomingAppointments: boolean;
+  upcomingDaysCount: number;
 }
 
-const DEFAULT: DashboardWidgets = {
+export type BoolWidgetKey = Exclude<keyof DashboardWidgets, 'upcomingDaysCount'>;
+
+export const DEFAULT_WIDGETS: DashboardWidgets = {
   schedule: true,
   pendingPayments: true,
   heatmap: true,
   lowStock: true,
+  upcomingAppointments: true,
+  upcomingDaysCount: 7,
 };
+
+const DEFAULT = DEFAULT_WIDGETS;
 
 const KEY_PREFIX = 'dashboard_widgets_';
 
@@ -29,9 +37,10 @@ export function saveDashboardWidgets(businessId: string, config: DashboardWidget
   localStorage.setItem(`${KEY_PREFIX}${businessId}`, JSON.stringify(config));
 }
 
-export const WIDGET_LABELS: Record<keyof DashboardWidgets, string> = {
+export const WIDGET_LABELS: Record<BoolWidgetKey, string> = {
   schedule: 'Agenda de hoje',
   pendingPayments: 'Pagamentos pendentes',
   heatmap: 'Mapa de calor',
   lowStock: 'Alertas de estoque',
+  upcomingAppointments: 'Próximos agendamentos',
 };
