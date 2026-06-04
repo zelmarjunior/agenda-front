@@ -19,7 +19,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
-        executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
       },
     },
   ],

@@ -41,10 +41,13 @@ interface StatCard {
 export function DashboardContent(): JSX.Element {
   const businessId = storage.getBusinessId()!;
 
+  const [mounted, setMounted] = useState(false);
+
   // Inicia com DEFAULT para que SSR e hydration inicial sejam idênticos,
   // depois carrega do localStorage apenas no cliente.
   const [widgets, setWidgets] = useState<DashboardWidgets>(DEFAULT_WIDGETS);
   useEffect(() => {
+    setMounted(true);
     setWidgets(getDashboardWidgets(businessId));
   }, [businessId]);
 
@@ -67,10 +70,15 @@ export function DashboardContent(): JSX.Element {
   const pendingCount = todayAppts.filter((a) => a.status === 'PENDING').length;
   const confirmedCount = todayAppts.filter((a) => a.status === 'CONFIRMED').length;
 
+  // Garante que SSR e hydration inicial sejam idênticos (ambos mostram loading).
+  const effLoadingAppts = !mounted || loadingAppts;
+  const effLoadingProfs = !mounted || loadingProfs;
+  const effLoadingClients = !mounted || loadingClients;
+
   const stats: StatCard[] = [
     {
       label: 'Agendamentos hoje',
-      value: loadingAppts ? '—' : todayAppts.length,
+      value: effLoadingAppts ? '—' : todayAppts.length,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -86,7 +94,7 @@ export function DashboardContent(): JSX.Element {
     },
     {
       label: 'Pendentes',
-      value: loadingAppts ? '—' : pendingCount,
+      value: effLoadingAppts ? '—' : pendingCount,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -102,7 +110,7 @@ export function DashboardContent(): JSX.Element {
     },
     {
       label: 'Confirmados',
-      value: loadingAppts ? '—' : confirmedCount,
+      value: effLoadingAppts ? '—' : confirmedCount,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -118,7 +126,7 @@ export function DashboardContent(): JSX.Element {
     },
     {
       label: 'Profissionais',
-      value: loadingProfs ? '—' : professionals.length,
+      value: effLoadingProfs ? '—' : professionals.length,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -134,7 +142,7 @@ export function DashboardContent(): JSX.Element {
     },
     {
       label: 'Clientes',
-      value: loadingClients ? '—' : (totalClients ?? 0),
+      value: effLoadingClients ? '—' : (totalClients ?? 0),
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -211,7 +219,7 @@ export function DashboardContent(): JSX.Element {
           <span className="text-xs font-medium text-ocean-secondary">{formatDate(new Date())}</span>
         </div>
 
-        {loadingAppts ? (
+        {effLoadingAppts ? (
           <div className="py-12 flex justify-center">
             <Spinner />
           </div>
