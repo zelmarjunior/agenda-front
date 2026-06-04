@@ -63,10 +63,10 @@ export function AppointmentDashboardModal({ appointment, onClose, onMutate }: Pr
     ): Promise<void> => {
       if (!appointment) return;
       await run(
-        () => appointmentsService.update(businessId, appointment.id, {
+        async () => { await appointmentsService.update(businessId, appointment.id, {
           finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
           paymentMethod: values.paymentMethod || undefined,
-        }),
+        }); },
         'Agendamento atualizado!',
       );
     },
