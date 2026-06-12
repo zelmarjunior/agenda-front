@@ -203,17 +203,13 @@ export function Sidebar(): JSX.Element {
         className="fixed top-3 left-3 z-50 flex items-center justify-center w-9 h-9 rounded-xl glass-card shadow-sm lg:hidden"
       >
         <svg
-          className="h-5 w-5 text-ocean-on-surface"
+          className="h-5 w-5"
+          style={{ color: '#0D0B1A' }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
@@ -228,7 +224,7 @@ export function Sidebar(): JSX.Element {
 
       {/* Sidebar panel */}
       <aside
-        style={{ backgroundColor: '#213145' }}
+        style={{ backgroundColor: '#120F22' }}
         className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col h-screen transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 border-r border-white/10 shadow-2xl ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
@@ -237,30 +233,38 @@ export function Sidebar(): JSX.Element {
         <div className="px-5 py-5 flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #0ea5e9, #006591)' }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
+              style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
             >
-              <svg
-                className="h-5 w-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  d="M5 3l14 9-14 9V3z"
                 />
               </svg>
             </div>
             <div>
-              <span className="text-base font-bold text-white tracking-tight">Agenda</span>
+              <span
+                className="text-base font-bold tracking-tight"
+                style={{
+                  fontFamily: 'var(--font-bebas), sans-serif',
+                  fontSize: '1.4rem',
+                  letterSpacing: '0.08em',
+                  background: 'linear-gradient(135deg, #A0AAFF 0%, #E85FC0 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                GLOWSY
+              </span>
               <p
                 className="text-[10px] font-medium tracking-widest uppercase"
-                style={{ color: '#94ccff' }}
+                style={{ color: '#A0AAFF' }}
               >
-                Professional
+                Studio
               </p>
             </div>
           </div>
@@ -268,17 +272,12 @@ export function Sidebar(): JSX.Element {
             onClick={() => setIsOpen(false)}
             aria-label="Fechar menu"
             className="lg:hidden p-1.5 rounded-lg transition-colors focus:outline-none"
-            style={{ color: '#94ccff' }}
+            style={{ color: '#A0AAFF' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#94ccff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#A0AAFF')}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -296,7 +295,11 @@ export function Sidebar(): JSX.Element {
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => setIsOpen(false)}
                     className={`ocean-sidebar-item ${isActive ? 'ocean-sidebar-item-active' : 'ocean-sidebar-item-inactive'} focus:outline-none`}
-                    style={isActive ? { color: '#ffffff', borderLeftColor: '#0ea5e9' } : undefined}
+                    style={
+                      isActive
+                        ? { color: '#ffffff', borderLeftColor: '#9B5FE0' }
+                        : undefined
+                    }
                   >
                     <span aria-hidden="true">{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
@@ -304,7 +307,10 @@ export function Sidebar(): JSX.Element {
                       <span
                         className="ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none"
                         style={{
-                          background: item.badgeKey === 'inventory' ? '#ef4444' : '#0ea5e9',
+                          background:
+                            item.badgeKey === 'inventory'
+                              ? '#ef4444'
+                              : 'linear-gradient(135deg, #5B6CF0, #E85FC0)',
                           color: '#fff',
                         }}
                       >
@@ -337,12 +343,12 @@ export function Sidebar(): JSX.Element {
             </svg>
             Sair
           </button>
-          <p
+{/*           <p
             className="mt-4 px-3 text-[10px] font-medium tracking-widest uppercase"
-            style={{ color: 'rgba(148,204,255,0.4)' }}
+            style={{ color: 'rgba(160,170,255,0.35)' }}
           >
             v0.1.0
-          </p>
+          </p> */}
         </div>
       </aside>
     </>

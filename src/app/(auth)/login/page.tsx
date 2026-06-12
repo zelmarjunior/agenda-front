@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LoginForm } from '@/components/forms/LoginForm';
 
 export const metadata: Metadata = {
-  title: 'Entrar — Agenda',
+  title: 'Entrar — Glowsy',
   description: 'Acesse sua conta',
 };
 

@@ -2,31 +2,44 @@
 
 @theme {
   /* Typography */
-  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), 'Space Grotesk', system-ui, sans-serif;
 
-  /* Ocean Design System — Color Tokens */
-  --color-ocean-primary: #006591;
-  --color-ocean-accent: #0ea5e9;
-  --color-ocean-sidebar: #213145;
-  --color-ocean-surface: #f8f9ff;
-  --color-ocean-surface-container: #e5eeff;
-  --color-ocean-surface-container-low: #eff4ff;
-  --color-ocean-surface-container-high: #dce9ff;
-  --color-ocean-surface-container-highest: #d3e4fe;
-  --color-ocean-on-surface: #0b1c30;
-  --color-ocean-on-surface-variant: #3e4850;
-  --color-ocean-secondary: #576065;
-  --color-ocean-outline: #6e7881;
-  --color-ocean-outline-variant: #bec8d2;
-  --color-ocean-error: #ba1a1a;
-  --color-ocean-error-container: #ffdad6;
-  --color-ocean-tertiary: #006399;
-  --color-ocean-tertiary-container: #58a1dc;
-  --color-ocean-inverse-on-surface: #eaf1ff;
-  --color-ocean-sidebar-text: #dbe4ea;
-  --color-ocean-sidebar-muted: #94ccff;
-  --color-ocean-primary-fixed: #c9e6ff;
-  --color-ocean-primary-container: #0ea5e9;
+  /* Glowsy Design System — Color Tokens */
+  --color-glow-blue:       #5B6CF0;
+  --color-glow-violet:     #9B5FE0;
+  --color-glow-pink:       #E85FC0;
+  --color-glow-pink-lt:    #F5A8DC;
+  --color-glow-blue-lt:    #A0AAFF;
+  --color-glow-off:        #F7F5FF;
+  --color-glow-ink:        #0D0B1A;
+  --color-glow-ink2:       #3D3656;
+  --color-glow-ink3:       #8C84A8;
+  --color-glow-sidebar:    #120F22;
+  --color-glow-surface:    #F7F5FF;
+
+  /* Legacy aliases (evita quebrar classes existentes) */
+  --color-ocean-primary:                #5B6CF0;
+  --color-ocean-accent:                 #9B5FE0;
+  --color-ocean-sidebar:                #120F22;
+  --color-ocean-surface:                #F7F5FF;
+  --color-ocean-surface-container:      #EDE8F8;
+  --color-ocean-surface-container-low:  #F3F0FB;
+  --color-ocean-surface-container-high: #E0D8F5;
+  --color-ocean-surface-container-highest: #D4CBF0;
+  --color-ocean-on-surface:             #0D0B1A;
+  --color-ocean-on-surface-variant:     #3D3656;
+  --color-ocean-secondary:              #8C84A8;
+  --color-ocean-outline:                #8C84A8;
+  --color-ocean-outline-variant:        #C9C0E0;
+  --color-ocean-error:                  #ba1a1a;
+  --color-ocean-error-container:        #ffdad6;
+  --color-ocean-tertiary:               #9B5FE0;
+  --color-ocean-tertiary-container:     #C9B0EC;
+  --color-ocean-inverse-on-surface:     #F7F5FF;
+  --color-ocean-sidebar-text:           #E2DCF5;
+  --color-ocean-sidebar-muted:          #A0AAFF;
+  --color-ocean-primary-fixed:          #DDD0F4;
+  --color-ocean-primary-container:      #9B5FE0;
 }
 
 @layer base {
@@ -38,11 +51,11 @@
 
   body {
     min-height: 100%;
-    background-color: #f8f9ff;
-    color: #0b1c30;
+    background-color: #F7F5FF;
+    color: #0D0B1A;
     background-image:
-      radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.08) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgba(91, 108, 240, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(232, 95, 192, 0.08) 0px, transparent 50%);
     background-attachment: fixed;
   }
 
@@ -54,11 +67,23 @@
 }
 
 @layer utilities {
+  /* Gradient shorthand */
+  .glow-grad {
+    background: linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%);
+  }
+
+  .glow-grad-text {
+    background: linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .glass-card {
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(190, 200, 210, 0.45);
+    border: 1px solid rgba(155, 95, 224, 0.18);
   }
 
   .glass-card-hover {
@@ -68,13 +93,13 @@
   }
 
   .glass-card-hover:hover {
-    box-shadow: 0 8px 32px rgba(0, 101, 145, 0.1);
+    box-shadow: 0 8px 32px rgba(155, 95, 224, 0.14);
     transform: translateY(-1px);
   }
 
   .ocean-input {
     background: rgba(255, 255, 255, 0.8);
-    border: 1px solid #bec8d2;
+    border: 1px solid #C9C0E0;
     border-radius: 0.75rem;
     transition:
       border-color 0.15s ease,
@@ -83,8 +108,8 @@
 
   .ocean-input:focus {
     outline: none;
-    border-color: #0ea5e9;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+    border-color: #9B5FE0;
+    box-shadow: 0 0 0 3px rgba(155, 95, 224, 0.15);
   }
 
   .ocean-sidebar-item {
@@ -101,18 +126,18 @@
   }
 
   .ocean-sidebar-item-active {
-    background: rgba(14, 165, 233, 0.18);
+    background: rgba(155, 95, 224, 0.2);
     color: #ffffff;
-    border-left: 3px solid #0ea5e9;
+    border-left: 3px solid #9B5FE0;
     padding-left: calc(0.75rem - 3px);
   }
 
   .ocean-sidebar-item-inactive {
-    color: #bfc8ce;
+    color: #C9C0E0;
   }
 
   .ocean-sidebar-item-inactive:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.07);
     color: #ffffff;
   }
 }

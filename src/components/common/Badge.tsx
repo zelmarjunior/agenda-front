@@ -5,13 +5,13 @@ interface BadgeProps {
   children: React.ReactNode;
 }
 
-/* Ocean Design System status colors */
+/* Glowsy Design System status colors */
 const STYLES: Record<BadgeVariant, string> = {
   default: 'bg-ocean-surface-container text-ocean-on-surface-variant',
-  success: 'bg-[#c9e6ff] text-[#004c6e]',
+  success: 'bg-[#DDD0F4] text-[#5B2EA0]',
   warning: 'bg-amber-100 text-amber-800',
-  danger: 'bg-ocean-error-container text-ocean-error',
-  info: 'bg-[#0ea5e9]/15 text-ocean-primary',
+  danger:  'bg-ocean-error-container text-ocean-error',
+  info:    'bg-[#A0AAFF]/20 text-[#5B6CF0]',
 };
 
 export function Badge({ variant = 'default', children }: BadgeProps): JSX.Element {

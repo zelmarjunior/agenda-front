@@ -60,30 +60,38 @@ export function LoginForm(): JSX.Element {
     'ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface placeholder:text-ocean-outline';
 
   const btnCls =
-    'w-full bg-ocean-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#004c6e] focus:outline-none focus:ring-2 focus:ring-ocean-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm shadow-ocean-primary/25';
+    'w-full text-white rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm';
 
   return (
     <div
       className="glass-card rounded-2xl p-8"
-      style={{ boxShadow: '0 24px 64px rgba(0,101,145,0.12)' }}
+      style={{ boxShadow: '0 24px 64px rgba(155,95,224,0.14)' }}
     >
       {/* Brand */}
       <div className="flex items-center gap-3 mb-8">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shadow"
-          style={{ background: 'linear-gradient(135deg, #0ea5e9, #006591)' }}
+          className="w-10 h-10 rounded-xl flex items-center justify-center shadow shrink-0"
+          style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
         >
           <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
           </svg>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-ocean-on-surface tracking-tight">Agenda</h1>
+          <h1
+            className="font-bold tracking-tight"
+            style={{
+              fontFamily: 'var(--font-bebas), sans-serif',
+              fontSize: '1.6rem',
+              letterSpacing: '0.08em',
+              background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            GLOWSY
+          </h1>
           <p className="text-xs font-medium text-ocean-secondary">
             {step === 1 ? 'Informe seu e-mail para continuar' : `Entrando como ${email}`}
           </p>
@@ -92,10 +100,18 @@ export function LoginForm(): JSX.Element {
 
       {/* Step bar */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="h-1.5 flex-1 rounded-full" style={{ background: '#0ea5e9' }} />
+        <div
+          className="h-1.5 flex-1 rounded-full"
+          style={{ background: 'linear-gradient(90deg, #5B6CF0, #9B5FE0)' }}
+        />
         <div
           className="h-1.5 flex-1 rounded-full transition-all duration-300"
-          style={{ background: step === 2 ? '#0ea5e9' : '#bec8d2' }}
+          style={{
+            background:
+              step === 2
+                ? 'linear-gradient(90deg, #9B5FE0, #E85FC0)'
+                : '#C9C0E0',
+          }}
         />
       </div>
 
@@ -120,7 +136,12 @@ export function LoginForm(): JSX.Element {
               <p role="alert" className="mt-1.5 text-xs text-ocean-error">{emailError}</p>
             )}
           </div>
-          <button type="submit" disabled={loading} className={btnCls}>
+          <button
+            type="submit"
+            disabled={loading}
+            className={btnCls}
+            style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
+          >
             Continuar →
           </button>
         </form>
@@ -131,9 +152,11 @@ export function LoginForm(): JSX.Element {
           {storage.getLastBusiness() && (
             <div
               className="mb-5 rounded-xl px-4 py-3 border"
-              style={{ background: 'rgba(14,165,233,0.08)', borderColor: 'rgba(14,165,233,0.25)' }}
+              style={{ background: 'rgba(155,95,224,0.07)', borderColor: 'rgba(155,95,224,0.25)' }}
             >
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-ocean-primary">Negócio</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#9B5FE0' }}>
+                Negócio
+              </p>
               <p className="text-sm font-bold text-ocean-on-surface mt-0.5">
                 {storage.getLastBusiness()?.businessName}
               </p>
@@ -154,7 +177,12 @@ export function LoginForm(): JSX.Element {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <button type="submit" disabled={loading} className={btnCls}>
+          <button
+            type="submit"
+            disabled={loading}
+            className={btnCls}
+            style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
+          >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
           <button
@@ -171,7 +199,10 @@ export function LoginForm(): JSX.Element {
         Novo negócio?{' '}
         <a
           href="/register"
-          className="text-ocean-primary font-semibold hover:text-ocean-accent transition-colors focus:outline-none focus:underline"
+          className="font-semibold transition-colors focus:outline-none focus:underline"
+          style={{ color: '#9B5FE0' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#5B6CF0')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B5FE0')}
         >
           Criar conta
         </a>

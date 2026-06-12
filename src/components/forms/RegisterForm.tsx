@@ -90,20 +90,35 @@ export function RegisterForm(): JSX.Element {
   }
 
   return (
-    <div className="glass-card rounded-2xl p-8" style={{ boxShadow: '0 24px 64px rgba(0,101,145,0.12)' }}>
+    <div
+      className="glass-card rounded-2xl p-8"
+      style={{ boxShadow: '0 24px 64px rgba(155,95,224,0.14)' }}
+    >
       <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shadow"
-          style={{ background: 'linear-gradient(135deg, #0ea5e9, #006591)' }}
+          className="w-10 h-10 rounded-xl flex items-center justify-center shadow shrink-0"
+          style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
         >
           <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
           </svg>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-ocean-on-surface tracking-tight">Criar negócio</h1>
-          <p className="text-xs font-medium text-ocean-secondary">Configure seu salão ou negócio</p>
+          <h1
+            className="font-bold tracking-tight"
+            style={{
+              fontFamily: 'var(--font-bebas), sans-serif',
+              fontSize: '1.4rem',
+              letterSpacing: '0.08em',
+              background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            GLOWSY
+          </h1>
+          <p className="text-xs font-medium text-ocean-secondary">Configure seu estúdio ou negócio</p>
         </div>
       </div>
 
@@ -115,13 +130,16 @@ export function RegisterForm(): JSX.Element {
             <button
               type="button"
               onClick={() => setValue('soloMode', true, { shouldValidate: true })}
-              className={`rounded-xl border-2 p-3.5 text-left transition-all focus:outline-none ${
-                soloMode
-                  ? 'border-ocean-primary bg-ocean-primary/5'
-                  : 'border-ocean-outline-variant hover:border-ocean-primary/40'
-              }`}
+              className="rounded-xl border-2 p-3.5 text-left transition-all focus:outline-none"
+              style={{
+                borderColor: soloMode ? '#9B5FE0' : '#C9C0E0',
+                background: soloMode ? 'rgba(155,95,224,0.06)' : 'transparent',
+              }}
             >
-              <p className={`text-sm font-bold ${soloMode ? 'text-ocean-primary' : 'text-ocean-on-surface'}`}>
+              <p
+                className="text-sm font-bold"
+                style={{ color: soloMode ? '#9B5FE0' : '#0D0B1A' }}
+              >
                 Solo
               </p>
               <p className="text-[11px] text-ocean-secondary mt-0.5 leading-tight">
@@ -131,13 +149,16 @@ export function RegisterForm(): JSX.Element {
             <button
               type="button"
               onClick={() => setValue('soloMode', false, { shouldValidate: true })}
-              className={`rounded-xl border-2 p-3.5 text-left transition-all focus:outline-none ${
-                !soloMode
-                  ? 'border-ocean-primary bg-ocean-primary/5'
-                  : 'border-ocean-outline-variant hover:border-ocean-primary/40'
-              }`}
+              className="rounded-xl border-2 p-3.5 text-left transition-all focus:outline-none"
+              style={{
+                borderColor: !soloMode ? '#9B5FE0' : '#C9C0E0',
+                background: !soloMode ? 'rgba(155,95,224,0.06)' : 'transparent',
+              }}
             >
-              <p className={`text-sm font-bold ${!soloMode ? 'text-ocean-primary' : 'text-ocean-on-surface'}`}>
+              <p
+                className="text-sm font-bold"
+                style={{ color: !soloMode ? '#9B5FE0' : '#0D0B1A' }}
+              >
                 Com equipe
               </p>
               <p className="text-[11px] text-ocean-secondary mt-0.5 leading-tight">
@@ -200,7 +221,8 @@ export function RegisterForm(): JSX.Element {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full mt-2 bg-ocean-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#004c6e] focus:outline-none focus:ring-2 focus:ring-ocean-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm shadow-ocean-primary/25"
+          className="w-full mt-2 text-white rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
         >
           {isSubmitting ? 'Criando negócio...' : 'Criar negócio'}
         </button>
@@ -208,7 +230,13 @@ export function RegisterForm(): JSX.Element {
 
       <p className="mt-6 text-center text-sm text-ocean-secondary">
         Já tem conta?{' '}
-        <a href="/login" className="text-ocean-primary font-semibold hover:text-ocean-accent transition-colors focus:outline-none focus:underline">
+        <a
+          href="/login"
+          className="font-semibold transition-colors focus:outline-none focus:underline"
+          style={{ color: '#9B5FE0' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#5B6CF0')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B5FE0')}
+        >
           Entrar
         </a>
       </p>
