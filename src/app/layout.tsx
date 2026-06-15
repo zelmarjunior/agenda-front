@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ToastContainer } from '@/components/common/ToastContainer';
+import { ServiceWorkerRegistration } from '@/components/common/ServiceWorkerRegistration';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-jakarta',
@@ -46,6 +47,7 @@ export default function RootLayout({
         >
           Pular para o conteúdo
         </a>
+        <ServiceWorkerRegistration />
         <ToastProvider>
           <AuthProvider>
             {children}
