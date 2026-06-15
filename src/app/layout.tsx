@@ -25,6 +25,13 @@ export const metadata: Metadata = {
     default: 'Glowsy',
   },
   description: 'Agenda, clientes, financeiro e relatórios para estúdios de beleza',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Glowsy',
+  },
+  themeColor: '#7c3aed',
 };
 
 export default function RootLayout({

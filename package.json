@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.4.0",
     "@tailwindcss/postcss": "^4.3.0",
     "axios": "^1.16.1",
