@@ -2,8 +2,25 @@ import type { ReactNode } from 'react';
 
 export default function AuthLayout({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <div className="min-h-screen flex">
-      {/* ── Painel esquerdo — imagem ── */}
+    <div
+      className="min-h-screen flex relative"
+      style={{
+        backgroundImage: 'url(/login-1.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Overlay de gradiente — só no mobile */}
+      <div
+        className="absolute inset-0 lg:hidden"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(13,11,26,0.60) 0%, rgba(91,108,240,0.32) 40%, rgba(232,95,192,0.25) 100%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* ── Painel esquerdo — imagem (desktop) ── */}
       <div
         className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative flex-col justify-between overflow-hidden"
         style={{
@@ -50,9 +67,7 @@ export default function AuthLayout({ children }: { children: ReactNode }): JSX.E
 
           {/* Texto de destaque na base */}
           <div>
-            <p
-              className="text-white/50 text-xs font-semibold tracking-widest uppercase mb-4"
-            >
+            <p className="text-white/50 text-xs font-semibold tracking-widest uppercase mb-4">
               Gestão para estúdios de beleza
             </p>
             <h2
@@ -110,11 +125,7 @@ export default function AuthLayout({ children }: { children: ReactNode }): JSX.E
       {/* ── Painel direito — formulário ── */}
       <main
         id="main-content"
-        className="flex-1 flex items-center justify-center p-6 lg:p-10"
-        style={{
-          background:
-            'radial-gradient(ellipse at 20% 20%, rgba(91,108,240,0.1) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(232,95,192,0.08) 0%, transparent 55%), #F7F5FF',
-        }}
+        className="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-10 auth-form-panel"
       >
         <div className="w-full max-w-md">{children}</div>
       </main>

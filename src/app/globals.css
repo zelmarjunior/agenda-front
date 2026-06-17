@@ -51,6 +51,7 @@
 
   body {
     min-height: 100%;
+    touch-action: manipulation;
     background-color: #F7F5FF;
     color: #0D0B1A;
     background-image:
@@ -77,6 +78,19 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .auth-form-panel {
+    background: transparent;
+  }
+
+  @media (min-width: 1024px) {
+    .auth-form-panel {
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(91,108,240,0.1) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(232,95,192,0.08) 0%, transparent 55%),
+        #F7F5FF;
+    }
   }
 
   .glass-card {

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Bebas_Neue } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
@@ -20,6 +20,13 @@ const bebasNeue = Bebas_Neue({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  themeColor: '#7c3aed',
+};
+
 export const metadata: Metadata = {
   title: {
     template: '%s | Glowsy',
@@ -32,7 +39,6 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Glowsy',
   },
-  themeColor: '#7c3aed',
 };
 
 export default function RootLayout({

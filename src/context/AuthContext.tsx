@@ -50,7 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           .catch(() => {});
       }
       setAuth(buildAuthState());
-      router.push(mustChangePassword ? '/trocar-senha' : '/');
+      // TODO: reativar quando /trocar-senha estiver funcionando
+      // router.push(mustChangePassword ? '/trocar-senha' : '/');
+      router.push('/');
     },
     [router],
   );
