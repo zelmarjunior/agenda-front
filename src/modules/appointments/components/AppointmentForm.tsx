@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -113,13 +113,22 @@ export function AppointmentForm({
   const [creatingClient, setCreatingClient] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
+  const [selectedClientObj, setSelectedClientObj] = useState<Client | null>(initial?.client ?? null);
   const clientDropdownRef = useRef<HTMLDivElement>(null);
+  const clientSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
-  const { data: clientsData, mutate: mutateClients } = useSWR(['clients-all', businessId], () =>
-    clientsService.list(businessId, { limit: 200 }),
-  );
+  const doClientSearch = useCallback(async (query: string) => {
+    try {
+      const result = await clientsService.list(businessId, {
+        limit: 30,
+        search: query || undefined,
+      });
+      setClientSearchResults(result.data);
+    } catch { /* silent */ }
+  }, [businessId]);
 
   const { data: profData } = useSWR(['professionals-all', businessId], () =>
     professionalsService.list(businessId, { limit: 100 }),
@@ -154,8 +163,31 @@ export function AppointmentForm({
 
   // ── Sync client search text when editing an existing appointment ──────────
   useEffect(() => {
-    if (initial?.client) setClientSearch(initial.client.name);
+    if (initial?.client) {
+      setClientSearch(initial.client.name);
+      setSelectedClientObj(initial.client);
+    }
   }, [initial]);
+
+  // ── Server-side search debounced ──────────────────────────────────────────
+  useEffect(() => {
+    if (!clientDropdownOpen) return;
+    if (clientSearchTimerRef.current) clearTimeout(clientSearchTimerRef.current);
+    clientSearchTimerRef.current = setTimeout(() => {
+      doClientSearch(clientSearch);
+    }, 300);
+    return () => {
+      if (clientSearchTimerRef.current) clearTimeout(clientSearchTimerRef.current);
+    };
+  }, [clientSearch, clientDropdownOpen, doClientSearch]);
+
+  // ── Load initial results when dropdown opens ──────────────────────────────
+  useEffect(() => {
+    if (clientDropdownOpen && clientSearchResults.length === 0) {
+      doClientSearch(clientSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientDropdownOpen]);
 
   // ── Auto-select logged-in professional ────────────────────────────────────
 
@@ -187,16 +219,11 @@ export function AppointmentForm({
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const allClients = [
-    ...(clientsData?.data ?? []),
-    ...extraClients.filter((e) => !(clientsData?.data ?? []).some((c) => c.id === e.id)),
+    ...clientSearchResults,
+    ...extraClients.filter((e) => !clientSearchResults.some((c) => c.id === e.id)),
   ];
 
-  const filteredClients = clientSearch.trim()
-    ? allClients.filter((c) =>
-        c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-        (c.phone ?? '').includes(clientSearch),
-      )
-    : allClients;
+  const filteredClients = allClients;
 
   // Build available time options
   const availableTimeSlots: string[] = (() => {
@@ -226,10 +253,11 @@ export function AppointmentForm({
         phone: newPhone.trim() || undefined,
       });
       setExtraClients((prev) => [...prev, created]);
+      setSelectedClientObj(created);
       setShowNewClient(false);
       setNewName('');
       setNewPhone('');
-      mutateClients();
+      doClientSearch(clientSearch);
       // Set value after state update so the new option is already in the DOM
       setTimeout(() => setValue('clientId', created.id, { shouldValidate: true }), 0);
       toast(`Cliente "${created.name}" criada!`, 'success');
@@ -296,7 +324,7 @@ export function AppointmentForm({
               {filteredClients.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-gray-400">Nenhuma cliente encontrada</li>
               ) : (
-                filteredClients.slice(0, 50).map((c) => (
+                filteredClients.map((c) => (
                   <li
                     key={c.id}
                     onMouseDown={(e) => {
@@ -304,6 +332,7 @@ export function AppointmentForm({
                       setValue('clientId', c.id, { shouldValidate: true });
                       setClientSearch(c.name);
                       setClientDropdownOpen(false);
+                      setSelectedClientObj(c);
                     }}
                     className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
                   >
@@ -323,8 +352,7 @@ export function AppointmentForm({
 
         {/* WhatsApp link — only for future appointments where client has phone */}
         {(() => {
-          const clientId = watch('clientId');
-          const selectedClient = allClients.find((c) => c.id === clientId);
+          const selectedClient = selectedClientObj;
           const selectedDate = watch('date');
           const selectedTime = watch('time');
           const isFuture = selectedDate && selectedTime
