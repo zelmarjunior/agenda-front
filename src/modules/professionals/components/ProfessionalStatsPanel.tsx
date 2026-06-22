@@ -33,17 +33,10 @@ const QUICK_RANGES = [
     const from = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0];
     return { from, to: now.toISOString().split('T')[0] };
   }},
-  { label: 'Este ano', getRange: () => {
-    const now = new Date();
-    return {
-      from: `${now.getFullYear()}-01-01`,
-      to: now.toISOString().split('T')[0],
-    };
-  }},
 ];
 
 const inputCls =
-  'rounded-lg border border-ocean-outline-variant/40 px-2.5 py-1.5 text-xs bg-transparent text-ocean-on-surface focus:outline-none focus:ring-2 focus:ring-ocean-accent';
+  'rounded-md border border-ocean-outline-variant/40 px-1.5 py-1 text-xs bg-transparent text-ocean-on-surface focus:outline-none focus:ring-1 focus:ring-ocean-accent w-28';
 
 function bar(pct: number, color: string) {
   return (
@@ -146,6 +139,7 @@ export function ProfessionalStatsPanel(): JSX.Element {
     <div className="space-y-4 mb-6">
       {/* Period filter */}
       <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-ocean-secondary">Período:</span>
         {QUICK_RANGES.map((q) => (
           <button
             key={q.label}
@@ -160,14 +154,14 @@ export function ProfessionalStatsPanel(): JSX.Element {
             {q.label}
           </button>
         ))}
-        <div className="flex items-center gap-1.5 ml-auto">
+        <div className="flex items-center gap-1">
           <input
             type="date"
             value={range.from}
             onChange={(e) => { setRange((r) => ({ ...r, from: e.target.value })); setActiveQuick(''); }}
             className={inputCls}
           />
-          <span className="text-xs text-ocean-outline">até</span>
+          <span className="text-xs text-ocean-outline">–</span>
           <input
             type="date"
             value={range.to}

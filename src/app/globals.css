@@ -47,6 +47,7 @@
     height: 100%;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    background-color: #7c3aed; /* iOS usa o fundo do <html> para gerar a splash screen */
   }
 
   /* Previne zoom automático do iOS em inputs com font-size < 16px */

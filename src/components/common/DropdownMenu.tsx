@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface DropdownMenuItem {
@@ -27,13 +27,26 @@ export function DropdownMenu({ items }: DropdownMenuProps): JSX.Element {
   function toggle() {
     if (!open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const estimatedHeight = items.length * 36 + 10;
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const shouldOpenUp = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
       setPos({
-        top: rect.bottom + 4,
+        top: shouldOpenUp ? rect.top - estimatedHeight - 4 : rect.bottom + 4,
         right: window.innerWidth - rect.right,
       });
     }
     setOpen((v) => !v);
   }
+
+  // After menu renders, measure actual height and reposition if it overflows viewport
+  useLayoutEffect(() => {
+    if (!open || !menuRef.current || !buttonRef.current) return;
+    const menuRect = menuRef.current.getBoundingClientRect();
+    const btnRect = buttonRef.current.getBoundingClientRect();
+    if (menuRect.bottom > window.innerHeight - 8 && btnRect.top > menuRect.height + 8) {
+      setPos({ top: btnRect.top - menuRect.height - 4, right: window.innerWidth - btnRect.right });
+    }
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {

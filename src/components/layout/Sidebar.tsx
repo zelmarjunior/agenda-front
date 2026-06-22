@@ -216,7 +216,7 @@ export function Sidebar(): JSX.Element {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -225,7 +225,7 @@ export function Sidebar(): JSX.Element {
       {/* Sidebar panel */}
       <aside
         style={{ backgroundColor: '#120F22' }}
-        className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col h-screen transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 border-r border-white/10 shadow-2xl ${
+        className={`fixed inset-y-0 left-0 z-60 w-64 flex flex-col h-screen transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 border-r border-white/10 shadow-2xl ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
