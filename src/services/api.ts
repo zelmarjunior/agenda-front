@@ -38,8 +38,32 @@ api.interceptors.response.use(
 export function getApiError(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as ErrorResponse | undefined;
-    return data?.message ?? error.message ?? 'Erro inesperado';
+
+    // Backend message takes priority — assume it's already in Portuguese
+    if (data?.message) {
+      return Array.isArray(data.message) ? data.message[0] : data.message;
+    }
+
+    // Network / connectivity errors
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      return 'Sem conexão com o servidor. Verifique sua internet.';
+    }
+    if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+      return 'A requisição demorou demais. Tente novamente.';
+    }
+
+    // HTTP status fallbacks
+    const status = error.response?.status;
+    if (status === 400) return 'Dados inválidos. Verifique os campos e tente novamente.';
+    if (status === 401) return 'Sessão expirada. Faça login novamente.';
+    if (status === 403) return 'Sem permissão para realizar esta ação.';
+    if (status === 404) return 'Recurso não encontrado.';
+    if (status === 409) return 'Conflito: este registro já existe ou foi alterado.';
+    if (status === 422) return 'Dados inválidos. Verifique os campos e tente novamente.';
+    if (status && status >= 500) return 'Erro no servidor. Tente novamente em instantes.';
+
+    return 'Erro inesperado. Tente novamente.';
   }
   if (error instanceof Error) return error.message;
-  return 'Erro inesperado';
+  return 'Erro inesperado. Tente novamente.';
 }

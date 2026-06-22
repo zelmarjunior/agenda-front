@@ -8,6 +8,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/common/Button';
+import { DropdownMenu } from '@/components/common/DropdownMenu';
 import { useToast } from '@/context/ToastContext';
 import { ServiceForm } from './ServiceForm';
 import { ServiceProfessionalsModal } from './ServiceProfessionalsModal';
@@ -140,9 +141,7 @@ export function ServiceList(): JSX.Element {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Custo
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Ações
-                </th>
+                <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ocean-outline-variant/15">
@@ -166,17 +165,15 @@ export function ServiceList(): JSX.Element {
                   <td className="px-4 py-3 text-ocean-on-surface-variant text-sm">
                     {s.costPrice ? formatCurrency(s.costPrice) : <span className="text-ocean-outline">—</span>}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => setProfsTarget(s)}>
-                        Profissionais
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => openEdit(s)}>
-                        Editar
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => setConfirmDelete(s)}>
-                        Excluir
-                      </Button>
+                  <td className="px-2 py-3">
+                    <div className="flex justify-end">
+                      <DropdownMenu
+                        items={[
+                          { label: 'Profissionais', onClick: () => setProfsTarget(s) },
+                          { label: 'Editar', onClick: () => openEdit(s) },
+                          { label: 'Excluir', onClick: () => setConfirmDelete(s), variant: 'danger' },
+                        ]}
+                      />
                     </div>
                   </td>
                 </tr>

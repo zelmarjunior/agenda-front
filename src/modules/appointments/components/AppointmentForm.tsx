@@ -118,6 +118,10 @@ export function AppointmentForm({
   const clientDropdownRef = useRef<HTMLDivElement>(null);
   const clientSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [serviceSearch, setServiceSearch] = useState(initial?.service?.name ?? '');
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const serviceDropdownRef = useRef<HTMLDivElement>(null);
+
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   const doClientSearch = useCallback(async (query: string) => {
@@ -150,22 +154,28 @@ export function AppointmentForm({
     { revalidateOnFocus: false },
   );
 
-  // ── Close client dropdown on outside click ───────────────────────────────
+  // ── Close dropdowns on outside click ─────────────────────────────────────
   useEffect(() => {
     function handleClick(e: MouseEvent): void {
       if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target as Node)) {
         setClientDropdownOpen(false);
+      }
+      if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(e.target as Node)) {
+        setServiceDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // ── Sync client search text when editing an existing appointment ──────────
+  // ── Sync search text when editing an existing appointment ────────────────
   useEffect(() => {
     if (initial?.client) {
       setClientSearch(initial.client.name);
       setSelectedClientObj(initial.client);
+    }
+    if (initial?.service) {
+      setServiceSearch(initial.service.name);
     }
   }, [initial]);
 
@@ -224,6 +234,10 @@ export function AppointmentForm({
   ];
 
   const filteredClients = allClients;
+
+  const filteredServices = (svcData?.data ?? []).filter(
+    (s) => !serviceSearch || s.name.toLowerCase().includes(serviceSearch.toLowerCase()),
+  );
 
   // Build available time options
   const availableTimeSlots: string[] = (() => {
@@ -490,24 +504,50 @@ export function AppointmentForm({
         </div>
       )}
 
-      {/* ── Service ────────────────────────────────────────────────────────── */}
+      {/* ── Service (searchable combobox) ─────────────────────────────────── */}
       <div>
-        <label htmlFor="serviceId" className={labelCls}>
-          Serviço
-        </label>
-        <select
-          id="serviceId"
-          {...register('serviceId')}
-          className={inputCls}
-          aria-invalid={!!errors.serviceId}
-        >
-          <option value="">Selecionar serviço...</option>
-          {(svcData?.data ?? []).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} · {s.durationMinutes}min · R$ {Number(s.price).toFixed(2).replace('.', ',')}
-            </option>
-          ))}
-        </select>
+        <label className={labelCls}>Serviço</label>
+        <div className="relative" ref={serviceDropdownRef}>
+          <input
+            type="text"
+            value={serviceSearch}
+            onChange={(e) => {
+              setServiceSearch(e.target.value);
+              setServiceDropdownOpen(true);
+              if (!e.target.value) setValue('serviceId', '', { shouldValidate: false });
+            }}
+            onFocus={() => setServiceDropdownOpen(true)}
+            placeholder="Buscar serviço..."
+            className={inputCls}
+            autoComplete="off"
+            aria-invalid={!!errors.serviceId}
+          />
+          {serviceDropdownOpen && (
+            <ul className="absolute z-50 w-full mt-1 max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+              {filteredServices.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-gray-400">Nenhum serviço encontrado</li>
+              ) : (
+                filteredServices.map((s) => (
+                  <li
+                    key={s.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setValue('serviceId', s.id, { shouldValidate: true });
+                      setServiceSearch(s.name);
+                      setServiceDropdownOpen(false);
+                    }}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
+                  >
+                    <span className="font-medium text-gray-900">{s.name}</span>
+                    <span className="text-xs text-gray-400 ml-2 shrink-0">
+                      {s.durationMinutes}min · R$ {Number(s.price).toFixed(2).replace('.', ',')}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
         {errors.serviceId && (
           <p role="alert" className="mt-1 text-xs text-red-500">
             {errors.serviceId.message}
@@ -516,7 +556,7 @@ export function AppointmentForm({
       </div>
 
       {/* ── Date + Time ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="date" className={labelCls}>
             Data
@@ -553,24 +593,39 @@ export function AppointmentForm({
             )}
           </div>
 
-          {slotsStatus === 'empty' ? (
-            <div className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-500">
-              Sem horários disponíveis
-            </div>
-          ) : (
-            <select
-              id="time"
-              {...register('time')}
-              className={inputCls}
-              aria-invalid={!!errors.time}
-              disabled={loadingSlots}
-            >
+          <input
+            id="time"
+            type="time"
+            {...register('time')}
+            className={`${inputCls} ${slotsStatus === 'empty' ? 'border-amber-300 bg-amber-50/50' : ''}`}
+            aria-invalid={!!errors.time}
+            disabled={loadingSlots}
+          />
+          {slotsStatus === 'empty' && (
+            <p className="mt-1 text-[10px] text-amber-600 font-medium">
+              Sem disponibilidade — confirme o horário manualmente
+            </p>
+          )}
+          {slotsStatus === 'ok' && availableTimeSlots.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
               {availableTimeSlots.map((t) => (
-                <option key={t} value={t}>
+                <button
+                  key={t}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setValue('time', t, { shouldValidate: true });
+                  }}
+                  className={`rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors ${
+                    watch('time') === t
+                      ? 'bg-blue-500 border-blue-500 text-white'
+                      : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                  }`}
+                >
                   {t}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           )}
           {errors.time && (
             <p role="alert" className="mt-1 text-xs text-red-500">
@@ -642,7 +697,7 @@ export function AppointmentForm({
           <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" size="sm" loading={isSubmitting} disabled={slotsStatus === 'empty'}>
+          <Button type="submit" size="sm" loading={isSubmitting}>
             {initial ? 'Reagendar' : 'Confirmar agendamento'}
           </Button>
         </div>

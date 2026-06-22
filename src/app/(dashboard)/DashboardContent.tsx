@@ -13,6 +13,7 @@ import { useClients } from '@/modules/clients/hooks/useClients';
 import { PendingPaymentsPanel } from '@/modules/reports/components/PendingPaymentsPanel';
 import { HeatmapPanel } from '@/modules/reports/components/HeatmapPanel';
 import { inventoryService } from '@/modules/inventory/services/inventoryService';
+import { useOkrs } from '@/modules/okrs/hooks/useOkrs';
 import { formatDate, formatDateTime } from '@/utils/formatters';
 import { getDashboardWidgets, DEFAULT_WIDGETS, type DashboardWidgets } from '@/utils/dashboardConfig';
 import { storage } from '@/utils/storage';
@@ -60,6 +61,13 @@ export function DashboardContent(): JSX.Element {
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
   const { professionals, isLoading: loadingProfs } = useProfessionals();
   const { total: totalClients, isLoading: loadingClients } = useClients();
+
+  const currentQuarterPeriod = (() => {
+    const now = new Date();
+    const q = Math.ceil((now.getMonth() + 1) / 3);
+    return `${now.getFullYear()}-Q${q}`;
+  })();
+  const { objectives } = useOkrs(currentQuarterPeriod);
 
   const { data: lowStockProducts } = useSWR(
     widgets.lowStock ? ['low-stock', businessId] : null,
@@ -182,6 +190,71 @@ export function DashboardContent(): JSX.Element {
           </div>
         ))}
       </div>
+
+      {/* OKRs summary */}
+      {mounted && objectives.length > 0 && (() => {
+        const avgCompletion = Math.round(
+          objectives.reduce((sum, o) => sum + o.completionPercent, 0) / objectives.length,
+        );
+        return (
+          <div className="mb-6 glass-card rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-ocean-outline-variant/25 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-ocean-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h2 className="text-sm font-semibold text-ocean-on-surface">
+                  OKRs — {currentQuarterPeriod}
+                </h2>
+              </div>
+              <a
+                href="/okrs"
+                className="text-xs font-medium text-ocean-primary hover:underline"
+              >
+                Ver todos →
+              </a>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-ocean-on-surface">{objectives.length}</p>
+                  <p className="text-xs text-ocean-secondary">objetivo{objectives.length !== 1 ? 's' : ''}</p>
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-ocean-secondary">Progresso médio</span>
+                    <span className="font-semibold text-ocean-on-surface">{avgCompletion}%</span>
+                  </div>
+                  <div className="h-2 bg-ocean-surface-container rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${avgCompletion}%`,
+                        background: avgCompletion >= 70
+                          ? '#22c55e'
+                          : avgCompletion >= 40
+                            ? '#f59e0b'
+                            : '#0ea5e9',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {objectives.map((o) => (
+                  <div key={o.id} className="flex items-center gap-3">
+                    <div className="h-1.5 w-1.5 rounded-full bg-ocean-primary/60 shrink-0" />
+                    <p className="text-xs text-ocean-on-surface truncate flex-1">{o.title}</p>
+                    <span className="text-xs font-semibold text-ocean-secondary shrink-0">
+                      {Math.round(o.completionPercent)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Low stock alert */}
       {widgets.lowStock && lowStockProducts && lowStockProducts.length > 0 && (

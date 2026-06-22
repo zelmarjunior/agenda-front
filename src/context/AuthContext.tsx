@@ -11,6 +11,7 @@ import { storage } from '@/utils/storage';
 interface AuthContextValue extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterBusinessRequest) => Promise<void>;
+  completeAuth: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -38,9 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   const [auth, setAuth] = useState<AuthState>(buildAuthState);
   const router = useRouter();
 
-  const login = useCallback(
-    async (data: LoginRequest) => {
-      const { token, mustChangePassword } = await authService.login(data);
+  const completeAuth = useCallback(
+    async (token: string) => {
       storage.setToken(token);
       const payload = decodeToken(token);
       if (payload) {
@@ -50,30 +50,32 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           .catch(() => {});
       }
       setAuth(buildAuthState());
-      // TODO: reativar quando /trocar-senha estiver funcionando
-      // router.push(mustChangePassword ? '/trocar-senha' : '/');
       router.push('/');
     },
     [router],
   );
 
+  const login = useCallback(
+    async (data: LoginRequest) => {
+      const { token } = await authService.login(data);
+      await completeAuth(token);
+    },
+    [completeAuth],
+  );
+
   const register = useCallback(
     async (data: RegisterBusinessRequest) => {
-      const { token } = await authService.register(data);
-      storage.setToken(token);
-      const payload = decodeToken(token);
-      if (payload) {
-        storage.setBusinessId(payload.businessId);
-        storage.setLastBusiness({
-          businessId: payload.businessId,
-          businessName: data.businessName,
-        });
+      const result = await authService.register(data);
+      if ('requiresEmailVerification' in result && result.requiresEmailVerification) {
+        router.push(`/verificar-email?email=${encodeURIComponent(result.email)}`);
+        return;
       }
+      const { token } = result as { token: string };
+      storage.setLastBusiness({ businessId: '', businessName: data.businessName });
       storage.setSoloMode(data.soloMode ?? false);
-      setAuth(buildAuthState());
-      router.push('/');
+      await completeAuth(token);
     },
-    [router],
+    [completeAuth, router],
   );
 
   const logout = useCallback(() => {
@@ -83,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ ...auth, login, register, logout }}>
+    <AuthContext.Provider value={{ ...auth, login, register, completeAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

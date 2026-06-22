@@ -56,12 +56,32 @@ export function LinkServicesForm({
     );
 
   const services = data?.data ?? [];
+  const allSelected = services.length > 0 && services.every((s) => selected.has(s.id));
+
+  function toggleAll(): void {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(services.map((s) => s.id)));
+    }
+  }
 
   return (
     <div className="space-y-4">
       {services.length === 0 ? (
         <p className="text-sm text-gray-500 text-center py-4">Nenhum serviço cadastrado.</p>
       ) : (
+        <>
+          <div className="flex items-center justify-between px-2">
+            <span className="text-xs text-gray-500">{selected.size} de {services.length} selecionados</span>
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
+            >
+              {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+            </button>
+          </div>
         <ul className="divide-y divide-gray-100 max-h-72 overflow-y-auto -mx-2">
           {services.map((s) => (
             <li key={s.id}>
@@ -79,6 +99,7 @@ export function LinkServicesForm({
             </li>
           ))}
         </ul>
+        </>
       )}
       <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>

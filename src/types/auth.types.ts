@@ -20,6 +20,13 @@ export interface AuthToken {
   mustChangePassword?: boolean;
 }
 
+export interface EmailVerificationRequired {
+  requiresEmailVerification: true;
+  email: string;
+}
+
+export type RegisterResult = AuthToken | EmailVerificationRequired;
+
 export interface JwtPayload {
   sub: string;
   businessId: string;

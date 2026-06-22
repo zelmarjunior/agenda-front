@@ -50,6 +50,13 @@ export const professionalsService = {
     await api.put(`/businesses/${businessId}/professionals/${professionalId}`, data);
   },
 
+  async getWorkingHours(businessId: string, professionalId: string): Promise<WorkingHour[]> {
+    const response = await api.get<SuccessResponse<WorkingHour[]>>(
+      `/businesses/${businessId}/professionals/${professionalId}/working-hours`,
+    );
+    return response.data.data;
+  },
+
   async setWorkingHours(
     businessId: string,
     professionalId: string,

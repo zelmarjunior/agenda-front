@@ -10,17 +10,10 @@ import { getApiError } from '@/services/api';
 const schema = z
   .object({
     businessName: z.string().min(2, 'Nome do negócio muito curto').max(255),
-    address: z.string().min(5, 'Endereço muito curto').max(500),
-    phone: z.string().min(10, 'Telefone inválido').max(20),
     email: z.string().email('E-mail inválido'),
     password: z.string().min(8, 'Mínimo de 8 caracteres'),
-    confirmPassword: z.string(),
     soloMode: z.boolean(),
     ownerSpecialty: z.string().max(255).optional(),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: 'As senhas não conferem',
-    path: ['confirmPassword'],
   })
   .refine((d) => !d.soloMode || !!d.ownerSpecialty?.trim(), {
     message: 'Informe sua especialidade',
@@ -66,7 +59,7 @@ export function RegisterForm(): JSX.Element {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { soloMode: true },
+    defaultValues: { soloMode: true, password: '' },
   });
 
   const soloMode = useWatch({ control, name: 'soloMode' });
@@ -75,8 +68,8 @@ export function RegisterForm(): JSX.Element {
     try {
       await registerUser({
         businessName: values.businessName,
-        address: values.address,
-        phone: values.phone,
+        address: '',
+        phone: '',
         email: values.email,
         password: values.password,
         soloMode: values.soloMode,
@@ -188,18 +181,6 @@ export function RegisterForm(): JSX.Element {
             aria-invalid={!!errors.businessName} />
         </Field>
 
-        <Field id="address" label="Endereço" error={errors.address?.message}>
-          <input id="address" type="text" autoComplete="street-address" className={inputCls}
-            placeholder="Rua das Flores, 123 — São Paulo/SP" {...register('address')}
-            aria-invalid={!!errors.address} />
-        </Field>
-
-        <Field id="phone" label="Telefone" error={errors.phone?.message}>
-          <input id="phone" type="tel" autoComplete="tel" className={inputCls}
-            placeholder="(11) 99999-9999" {...register('phone')}
-            aria-invalid={!!errors.phone} />
-        </Field>
-
         <Field id="email" label="E-mail" error={errors.email?.message}>
           <input id="email" type="email" autoComplete="email" className={inputCls}
             placeholder="contato@seusalao.com" {...register('email')}
@@ -210,12 +191,6 @@ export function RegisterForm(): JSX.Element {
           <input id="password" type="password" autoComplete="new-password" className={inputCls}
             placeholder="Mínimo 8 caracteres" {...register('password')}
             aria-invalid={!!errors.password} />
-        </Field>
-
-        <Field id="confirmPassword" label="Confirmar senha" error={errors.confirmPassword?.message}>
-          <input id="confirmPassword" type="password" autoComplete="new-password" className={inputCls}
-            placeholder="Repita a senha" {...register('confirmPassword')}
-            aria-invalid={!!errors.confirmPassword} />
         </Field>
 
         <button

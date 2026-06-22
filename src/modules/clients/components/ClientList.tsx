@@ -8,6 +8,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/common/Button';
+import { DropdownMenu } from '@/components/common/DropdownMenu';
 import { useToast } from '@/context/ToastContext';
 import { ClientForm } from './ClientForm';
 import { ClientHistory } from './ClientHistory';
@@ -165,12 +166,7 @@ export function ClientList(): JSX.Element {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                   Telefone
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  E-mail
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Ações
-                </th>
+                <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ocean-outline-variant/15">
@@ -183,18 +179,15 @@ export function ClientList(): JSX.Element {
                   <td className="px-4 py-3 text-ocean-on-surface-variant">
                     {c.phone ? formatPhone(c.phone) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-ocean-on-surface-variant">{c.email ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => openHistory(c)}>
-                        Histórico
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => openEdit(c)}>
-                        Editar
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => openDelete(c)}>
-                        Excluir
-                      </Button>
+                  <td className="px-2 py-3">
+                    <div className="flex justify-end">
+                      <DropdownMenu
+                        items={[
+                          { label: 'Histórico', onClick: () => openHistory(c) },
+                          { label: 'Editar', onClick: () => openEdit(c) },
+                          { label: 'Excluir', onClick: () => openDelete(c), variant: 'danger' },
+                        ]}
+                      />
                     </div>
                   </td>
                 </tr>

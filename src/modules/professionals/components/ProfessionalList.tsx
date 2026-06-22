@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import useSWR from 'swr';
 import { Modal } from '@/components/common/Modal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Pagination } from '@/components/common/Pagination';
@@ -8,6 +9,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/common/Button';
+import { DropdownMenu } from '@/components/common/DropdownMenu';
 import { useToast } from '@/context/ToastContext';
 import { ProfessionalForm } from './ProfessionalForm';
 import { WorkingHoursForm } from './WorkingHoursForm';
@@ -34,6 +36,12 @@ export function ProfessionalList(): JSX.Element {
   const [modal, setModal] = useState<ModalType>(null);
   const [selected, setSelected] = useState<Professional | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const { data: existingHours } = useSWR(
+    modal === 'hours' && selected ? ['working-hours', businessId, selected.id] : null,
+    () => professionalsService.getWorkingHours(businessId, selected!.id),
+    { revalidateOnFocus: false },
+  );
 
   function open(type: ModalType, p?: Professional): void {
     setSelected(p ?? null);
@@ -173,15 +181,13 @@ export function ProfessionalList(): JSX.Element {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                    Especialidade
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider hidden sm:table-cell">
+                    Telefone
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                    Comissão
+                    Cor
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                    Ações
-                  </th>
+                  <th className="px-4 py-3 w-10" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-ocean-outline-variant/15">
@@ -190,30 +196,44 @@ export function ProfessionalList(): JSX.Element {
                     key={p.id}
                     className="hover:bg-ocean-surface-container-low/40 transition-colors"
                   >
-                    <td className="px-4 py-3 font-semibold text-ocean-on-surface">{p.name}</td>
-                    <td className="px-4 py-3 text-ocean-on-surface-variant">
-                      {p.specialty ?? '—'}
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-ocean-on-surface">{p.name}</p>
+                      {p.specialty && (
+                        <p className="text-xs text-ocean-secondary mt-0.5">{p.specialty}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-ocean-on-surface-variant">
-                      {p.commissionRate != null ? `${p.commissionRate}%` : '—'}
+                    <td className="px-4 py-3 text-ocean-on-surface-variant hidden sm:table-cell">
+                      {p.phone ?? '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2 flex-wrap">
-                        <Button size="sm" variant="secondary" onClick={() => open('hours', p)}>
-                          Horários
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => open('services', p)}>
-                          Serviços
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => open('commissions', p)}>
-                          Comissões
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => open('edit', p)}>
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="danger" onClick={() => open('delete', p)}>
-                          Excluir
-                        </Button>
+                      {p.calendarColor ? (
+                        <span
+                          className="inline-flex items-center gap-2"
+                          title={p.calendarColor}
+                        >
+                          <span
+                            className="inline-block w-4 h-4 rounded-full border border-black/10 shadow-sm"
+                            style={{ background: p.calendarColor }}
+                          />
+                          <span className="text-xs text-ocean-secondary font-mono hidden md:inline">
+                            {p.calendarColor}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-ocean-outline text-sm">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex justify-end">
+                        <DropdownMenu
+                          items={[
+                            { label: 'Horários', onClick: () => open('hours', p) },
+                            { label: 'Serviços', onClick: () => open('services', p) },
+                            { label: 'Comissões', onClick: () => open('commissions', p) },
+                            { label: 'Editar', onClick: () => open('edit', p) },
+                            { label: 'Excluir', onClick: () => open('delete', p), variant: 'danger' },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -242,7 +262,11 @@ export function ProfessionalList(): JSX.Element {
         size="md"
       >
         {selected && (
-          <WorkingHoursForm existing={[]} onSubmit={handleWorkingHours} onCancel={closeModal} />
+          <WorkingHoursForm
+            existing={existingHours ?? []}
+            onSubmit={handleWorkingHours}
+            onCancel={closeModal}
+          />
         )}
       </Modal>
 
