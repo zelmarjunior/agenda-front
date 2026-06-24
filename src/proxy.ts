@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register'];
 
-export function proxy(request: NextRequest): NextResponse {
+export default function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('agenda:authed')?.value;
 

@@ -27,9 +27,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !window.location.pathname.startsWith('/login')) {
       storage.clearAll();
-      window.location.href = '/login';
+      window.dispatchEvent(new Event('auth:unauthorized'));
     }
     return Promise.reject(error);
   },

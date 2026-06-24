@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AuthState, LoginRequest, RegisterBusinessRequest } from '@/types/auth.types';
 import { authService } from '@/modules/auth/services/authService';
@@ -82,6 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     storage.clearAll();
     setAuth(EMPTY_STATE);
     router.push('/login');
+  }, [router]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setAuth(EMPTY_STATE);
+      if (!window.location.pathname.startsWith('/login')) {
+        router.replace('/login');
+      }
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [router]);
 
   return (

@@ -123,7 +123,7 @@ export function DayTimeline({
       </div>
 
       {/* Timeline */}
-      <div className="overflow-y-auto" style={{ maxHeight: 480 }}>
+      <div className="overflow-y-auto overflow-x-hidden" style={{ maxHeight: 480 }}>
         <div className="relative flex" style={{ height: totalPx }}>
           {/* Hour labels */}
           <div className="shrink-0 w-14 border-r border-ocean-outline-variant/20 relative">

@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ToastContainer } from '@/components/common/ToastContainer';
 import { ServiceWorkerRegistration } from '@/components/common/ServiceWorkerRegistration';
+import { SplashScreen } from '@/components/common/SplashScreen';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-jakarta',
@@ -58,6 +59,7 @@ export default function RootLayout({
         >
           Pular para o conteúdo
         </a>
+        <SplashScreen />
         <ServiceWorkerRegistration />
         <ToastProvider>
           <AuthProvider>

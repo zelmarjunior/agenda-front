@@ -20,8 +20,7 @@ export function LoginForm(): JSX.Element {
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function handleContinuar(e: React.FormEvent) {
-    e.preventDefault();
+  function handleContinuar() {
     if (!isValidEmail(email)) {
       setEmailError('E-mail inválido');
       return;
@@ -116,7 +115,7 @@ export function LoginForm(): JSX.Element {
       </div>
 
       {step === 1 && (
-        <form onSubmit={handleContinuar} noValidate>
+        <form onSubmit={(e) => e.preventDefault()} noValidate>
           <div className="mb-5">
             <label htmlFor="email" className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5">
               E-mail
@@ -130,6 +129,7 @@ export function LoginForm(): JSX.Element {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => { setEmailVal(e.target.value); setEmailError(''); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleContinuar(); } }}
               aria-invalid={!!emailError}
             />
             {emailError && (
@@ -137,7 +137,8 @@ export function LoginForm(): JSX.Element {
             )}
           </div>
           <button
-            type="submit"
+            type="button"
+            onClick={handleContinuar}
             disabled={loading}
             className={btnCls}
             style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}

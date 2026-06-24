@@ -675,25 +675,23 @@ export function AppointmentForm({
         </select>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-        {onOpenRecurring ? (
+      <div className="pt-1 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {onOpenRecurring && (
           <button
             type="button"
             onClick={() => {
               const clientId = watch('clientId');
               if (clientId) onOpenRecurring(clientId);
             }}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors focus:outline-none"
+            className="self-start flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors focus:outline-none"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Agendamento recorrente
           </button>
-        ) : (
-          <span />
         )}
-        <div className="flex gap-3">
+        <div className="flex gap-3 sm:ml-auto">
           <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
             Cancelar
           </Button>

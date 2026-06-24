@@ -41,7 +41,9 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
   }, []);
 
   const toast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = crypto.randomUUID();
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     dispatch({ type: 'ADD', toast: { id, message, type } });
     setTimeout(() => dispatch({ type: 'REMOVE', id }), AUTO_DISMISS_MS);
   }, []);
