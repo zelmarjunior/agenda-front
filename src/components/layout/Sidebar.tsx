@@ -7,6 +7,7 @@ import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { storage } from '@/utils/storage';
 import { api } from '@/services/api';
+import type { SuccessResponse, PaginatedResponse } from '@/types/api.types';
 
 interface NavItem {
   href: string;
@@ -170,21 +171,31 @@ function useSidebarCounts() {
   const businessId = storage.getBusinessId();
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: apptData } = useSWR(
+  const { data: apptTotal } = useSWR(
     businessId ? ['sidebar-appt-count', businessId, today] : null,
-    () => api.get<{ total: number }>(`/businesses/${businessId}/appointments?date=${today}&limit=1`).then((r) => r.data),
+    (): Promise<number> =>
+      api
+        .get<SuccessResponse<PaginatedResponse<unknown>>>(
+          `/businesses/${businessId}/appointments?date=${today}&limit=1`,
+        )
+        .then((r) => r.data.data.total),
     { refreshInterval: 5 * 60 * 1000 },
   );
 
-  const { data: invData } = useSWR(
+  const { data: invTotal } = useSWR(
     businessId ? ['sidebar-inv-count', businessId] : null,
-    () => api.get<{ total: number }>(`/businesses/${businessId}/products?lowStock=true&limit=1`).then((r) => r.data),
+    (): Promise<number> =>
+      api
+        .get<SuccessResponse<PaginatedResponse<unknown>>>(
+          `/businesses/${businessId}/products?lowStock=true&limit=1`,
+        )
+        .then((r) => r.data.data.total),
     { refreshInterval: 5 * 60 * 1000 },
   );
 
   return {
-    appointments: apptData?.total ?? 0,
-    inventory: invData?.total ?? 0,
+    appointments: apptTotal ?? 0,
+    inventory: invTotal ?? 0,
   };
 }
 

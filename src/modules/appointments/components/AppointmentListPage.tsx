@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
@@ -30,15 +31,31 @@ type ModalType = 'create' | 'edit' | 'cancel' | 'reschedule' | 'recurring' | 'no
 export function AppointmentListPage(): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const today = toDateStr(new Date());
   const todayDate = new Date();
 
+  const initialDate = searchParams.get('date') ?? today;
+  const initialDateObj = new Date(`${initialDate}T12:00:00`);
+
   const [dayView, setDayView] = useState<DayView>('timeline');
   const daySectionRef = useRef<HTMLDivElement>(null);
-  const [calYear, setCalYear] = useState(todayDate.getFullYear());
-  const [calMonth, setCalMonth] = useState(todayDate.getMonth());
-  const [selectedDate, setSelectedDate] = useState<string | null>(today);
+  const [calYear, setCalYear] = useState(initialDateObj.getFullYear());
+  const [calMonth, setCalMonth] = useState(initialDateObj.getMonth());
+  const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
+
+  useEffect(() => {
+    const date = searchParams.get('date');
+    if (!date) return;
+    const d = new Date(`${date}T12:00:00`);
+    setSelectedDate(date);
+    setCalYear(d.getFullYear());
+    setCalMonth(d.getMonth());
+    requestAnimationFrame(() => {
+      daySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [searchParams]);
   const [modal, setModal] = useState<ModalType>(null);
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
@@ -112,6 +129,15 @@ export function AppointmentListPage(): JSX.Element {
     setSelectedDate(next);
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
+  }
+
+  function goToToday(): void {
+    setSelectedDate(today);
+    setCalYear(todayDate.getFullYear());
+    setCalMonth(todayDate.getMonth());
+    requestAnimationFrame(() => {
+      daySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function openCreate(prefill?: string): void {
@@ -385,8 +411,9 @@ export function AppointmentListPage(): JSX.Element {
                 </button>
               </div>
 
-              {/* Dia / Horários toggle */}
-              <div className="flex justify-center pb-3">
+              {/* Dia / Horários toggle + Hoje */}
+              <div className="flex items-center justify-between px-4 pb-3">
+                <div className="w-16" />
                 <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
                   {(['timeline', 'cards'] as DayView[]).map((v) => (
                     <button
@@ -402,6 +429,13 @@ export function AppointmentListPage(): JSX.Element {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={goToToday}
+                  disabled={selectedDate === today}
+                  className="w-16 text-xs font-semibold text-ocean-primary hover:text-white disabled:text-white/30 disabled:cursor-default transition-colors focus:outline-none text-right"
+                >
+                  Hoje
+                </button>
               </div>
             </div>
 

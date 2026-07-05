@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { AppointmentDashboardModal } from './AppointmentDashboardModal';
@@ -75,6 +75,10 @@ export function UpcomingAppointmentsPanel({ daysCount }: Props): JSX.Element {
   }, [appointments]);
 
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const loading = !mounted || isLoading;
 
   return (
     <>
@@ -83,14 +87,14 @@ export function UpcomingAppointmentsPanel({ daysCount }: Props): JSX.Element {
           <h2 className="text-sm font-semibold text-ocean-on-surface">
             Próximos {daysCount} dias
           </h2>
-          {!isLoading && (
+          {!loading && (
             <span className="text-xs font-medium text-ocean-secondary">
               {appointments.length} agendamento{appointments.length !== 1 ? 's' : ''}
             </span>
           )}
         </div>
 
-        {isLoading ? (
+        {loading ? (
           <div className="py-12 flex justify-center">
             <Spinner />
           </div>

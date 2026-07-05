@@ -16,6 +16,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then(
+        (cached) => cached ?? new Response(null, { status: 503, statusText: "Service Unavailable" })
+      )
+    )
   );
 });

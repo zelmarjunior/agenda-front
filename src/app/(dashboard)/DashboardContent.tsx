@@ -1,19 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { Header } from '@/components/layout/Header';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { Modal } from '@/components/common/Modal';
 import { AppointmentDashboardModal } from '@/modules/appointments/components/AppointmentDashboardModal';
+import { AppointmentForm } from '@/modules/appointments/components/AppointmentForm';
 import { UpcomingAppointmentsPanel } from '@/modules/appointments/components/UpcomingAppointmentsPanel';
 import { useAppointments } from '@/modules/appointments/hooks/useAppointments';
+import { appointmentsService } from '@/modules/appointments/services/appointmentsService';
 import { useProfessionals } from '@/modules/professionals/hooks/useProfessionals';
 import { useClients } from '@/modules/clients/hooks/useClients';
 import { PendingPaymentsPanel } from '@/modules/reports/components/PendingPaymentsPanel';
 import { HeatmapPanel } from '@/modules/reports/components/HeatmapPanel';
 import { inventoryService } from '@/modules/inventory/services/inventoryService';
 import { useOkrs } from '@/modules/okrs/hooks/useOkrs';
+import { useToast } from '@/context/ToastContext';
+import { getApiError } from '@/services/api';
 import { formatDate, formatDateTime } from '@/utils/formatters';
 import { getDashboardWidgets, DEFAULT_WIDGETS, type DashboardWidgets } from '@/utils/dashboardConfig';
 import { storage } from '@/utils/storage';
@@ -41,8 +47,11 @@ interface StatCard {
 
 export function DashboardContent(): JSX.Element {
   const businessId = storage.getBusinessId()!;
+  const router = useRouter();
+  const { toast } = useToast();
 
   const [mounted, setMounted] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Inicia com DEFAULT para que SSR e hydration inicial sejam idênticos,
   // depois carrega do localStorage apenas no cliente.
@@ -59,6 +68,30 @@ export function DashboardContent(): JSX.Element {
   });
 
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
+
+  const handleQuickCreate = useCallback(
+    async (
+      scheduledAt: string,
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string },
+    ): Promise<void> => {
+      try {
+        await appointmentsService.create(businessId, {
+          ...values,
+          scheduledAt,
+          finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
+          paymentMethod: values.paymentMethod || undefined,
+        });
+        toast('Agendamento criado!', 'success');
+        setCreateOpen(false);
+        const date = scheduledAt.split('T')[0];
+        router.push(`/appointments?date=${date}`);
+      } catch (err) {
+        toast(getApiError(err), 'error');
+      }
+    },
+    [businessId, router, toast],
+  );
+
   const { professionals, isLoading: loadingProfs } = useProfessionals();
   const { total: totalClients, isLoading: loadingClients } = useClients();
 
@@ -169,6 +202,26 @@ export function DashboardContent(): JSX.Element {
   return (
     <div>
       <Header title={`Bom dia! ${formatDate(new Date())}`} />
+
+      {/* Quick schedule CTA */}
+      <div className="mb-6 rounded-2xl overflow-hidden bg-gradient-to-r from-ocean-primary to-blue-500 shadow-sm">
+        <div className="flex items-center justify-between px-5 py-4 gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-white">Novo agendamento</p>
+            <p className="text-xs text-white/75 mt-0.5">Agende um cliente rapidamente e veja na agenda</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-ocean-primary text-sm font-semibold hover:bg-white/90 transition-colors shadow-sm"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Agendar
+          </button>
+        </div>
+      </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 mb-8">
@@ -374,6 +427,13 @@ export function DashboardContent(): JSX.Element {
           <UpcomingAppointmentsPanel daysCount={widgets.upcomingDaysCount} />
         </div>
       )}
+
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Novo agendamento" size="md">
+        <AppointmentForm
+          onSubmit={handleQuickCreate}
+          onCancel={() => setCreateOpen(false)}
+        />
+      </Modal>
 
       <AppointmentDashboardModal
         appointment={editTarget}
