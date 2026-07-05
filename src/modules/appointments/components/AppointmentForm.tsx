@@ -45,7 +45,7 @@ type FormValues = z.infer<typeof schema>;
 interface AppointmentFormProps {
   initial?: Appointment;
   prefilledDatetime?: string;
-  onSubmit: (scheduledAt: string, values: Omit<FormValues, 'date' | 'time'>) => Promise<void>;
+  onSubmit: (scheduledAt: string, values: Omit<FormValues, 'date' | 'time'> & { extraServiceIds: string[] }) => Promise<void>;
   onCancel: () => void;
   onOpenRecurring?: (clientId: string) => void;
 }
@@ -106,6 +106,7 @@ export function AppointmentForm({
     },
   });
 
+  const [extraServiceIds, setExtraServiceIds] = useState<string[]>([]);
   const [extraClients, setExtraClients] = useState<Client[]>([]);
   const [showNewClient, setShowNewClient] = useState(false);
   const [newName, setNewName] = useState('');
@@ -290,6 +291,7 @@ export function AppointmentForm({
       serviceId: values.serviceId,
       finalPrice: values.finalPrice,
       paymentMethod: values.paymentMethod || undefined,
+      extraServiceIds,
     });
   }
 
@@ -554,6 +556,55 @@ export function AppointmentForm({
           </p>
         )}
       </div>
+
+      {/* ── Extra services (criação apenas) ──────────────────────────────── */}
+      {!initial && (
+        <div>
+          <label className={labelCls}>Serviços adicionais</label>
+
+          {extraServiceIds.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {extraServiceIds.map((id) => {
+                const svc = svcData?.data.find((s) => s.id === id);
+                if (!svc) return null;
+                return (
+                  <span key={id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                    {svc.name}
+                    <button
+                      type="button"
+                      onClick={() => setExtraServiceIds((prev) => prev.filter((i) => i !== id))}
+                      className="ml-0.5 text-blue-400 hover:text-blue-700 focus:outline-none"
+                      aria-label={`Remover ${svc.name}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <select
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (id && !extraServiceIds.includes(id)) {
+                setExtraServiceIds((prev) => [...prev, id]);
+              }
+            }}
+            className={inputCls}
+          >
+            <option value="">+ Adicionar serviço...</option>
+            {(svcData?.data ?? [])
+              .filter((s) => s.id !== serviceId && !extraServiceIds.includes(s.id))
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · {s.durationMinutes}min · R$ {Number(s.price).toFixed(2).replace('.', ',')}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
       {/* ── Date + Time ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

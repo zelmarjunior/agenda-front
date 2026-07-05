@@ -186,15 +186,20 @@ export function AppointmentListPage(): JSX.Element {
   const handleCreate = useCallback(
     async (
       scheduledAt: string,
-      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string },
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string; extraServiceIds: string[] },
     ): Promise<void> => {
       try {
-        await appointmentsService.create(businessId, {
-          ...values,
+        const created = await appointmentsService.create(businessId, {
+          clientId: values.clientId,
+          professionalId: values.professionalId,
+          serviceId: values.serviceId,
           scheduledAt,
           finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
           paymentMethod: values.paymentMethod || undefined,
         });
+        for (const svcId of values.extraServiceIds) {
+          await appointmentsService.addService(businessId, created.id, svcId);
+        }
         toast('Agendamento criado!', 'success');
         closeModal();
         mutate();
@@ -208,7 +213,7 @@ export function AppointmentListPage(): JSX.Element {
   const handleEdit = useCallback(
     async (
       _scheduledAt: string,
-      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string },
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string; extraServiceIds: string[] },
     ): Promise<void> => {
       if (!editTarget) return;
       try {

@@ -72,15 +72,20 @@ export function DashboardContent(): JSX.Element {
   const handleQuickCreate = useCallback(
     async (
       scheduledAt: string,
-      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string },
+      values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string; extraServiceIds: string[] },
     ): Promise<void> => {
       try {
-        await appointmentsService.create(businessId, {
-          ...values,
+        const created = await appointmentsService.create(businessId, {
+          clientId: values.clientId,
+          professionalId: values.professionalId,
+          serviceId: values.serviceId,
           scheduledAt,
           finalPrice: values.finalPrice ? Number(values.finalPrice) : undefined,
           paymentMethod: values.paymentMethod || undefined,
         });
+        for (const svcId of values.extraServiceIds) {
+          await appointmentsService.addService(businessId, created.id, svcId);
+        }
         toast('Agendamento criado!', 'success');
         setCreateOpen(false);
         const date = scheduledAt.split('T')[0];
@@ -204,7 +209,7 @@ export function DashboardContent(): JSX.Element {
       <Header title={`Bom dia! ${formatDate(new Date())}`} />
 
       {/* Quick schedule CTA */}
-      <div className="mb-6 rounded-2xl overflow-hidden bg-gradient-to-r from-ocean-primary to-blue-500 shadow-sm">
+      <div className="mb-6 rounded-2xl overflow-hidden bg-linear-to-r from-ocean-primary to-blue-500 shadow-sm">
         <div className="flex items-center justify-between px-5 py-4 gap-4">
           <div className="min-w-0">
             <p className="text-sm font-bold text-white">Novo agendamento</p>
