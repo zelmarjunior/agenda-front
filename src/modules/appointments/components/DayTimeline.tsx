@@ -7,7 +7,7 @@ import { getWaTemplate, buildWaMessage, buildWaUrl } from '@/utils/whatsapp';
 import { storage } from '@/utils/storage';
 import type { Appointment } from '@/types/appointments.types';
 
-const START_HOUR = 7;
+const START_HOUR = 6;
 const END_HOUR = 21;
 const HOUR_PX = 60;
 
