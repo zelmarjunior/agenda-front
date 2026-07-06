@@ -133,34 +133,33 @@ export function RecurringForm({ onSubmit, onCancel, initialClientId }: Recurring
       </div>
 
       {/* Date + Time */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="r-date" className={labelCls}>Data do 1º agendamento</label>
-          <input id="r-date" type="date" {...register('startDate')} className={inputCls} />
-          {errors.startDate && <p role="alert" className="mt-1 text-xs text-red-500">{errors.startDate.message}</p>}
-        </div>
-        <div>
-          <label htmlFor="r-time" className={labelCls}>Horário</label>
-          <input id="r-time" type="time" step="1800" {...register('startTime')} className={inputCls} />
-          {errors.startTime && <p role="alert" className="mt-1 text-xs text-red-500">{errors.startTime.message}</p>}
-        </div>
+      <div>
+        <label htmlFor="r-date" className={labelCls}>Data do 1º agendamento</label>
+        <input id="r-date" type="date" {...register('startDate')} className={inputCls} />
+        {errors.startDate && <p role="alert" className="mt-1 text-xs text-red-500">{errors.startDate.message}</p>}
       </div>
 
-      {/* Frequency + Occurrences */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="r-freq" className={labelCls}>Frequência</label>
-          <select id="r-freq" {...register('frequency')} className={inputCls}>
-            {(Object.keys(FREQ_LABELS) as RecurringFrequency[]).map((f) => (
-              <option key={f} value={f}>{FREQ_LABELS[f]}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="r-occ" className={labelCls}>Nº de ocorrências (máx 52)</label>
-          <input id="r-occ" type="number" min="1" max="52" {...register('occurrences')} className={inputCls} />
-          {errors.occurrences && <p role="alert" className="mt-1 text-xs text-red-500">{errors.occurrences.message}</p>}
-        </div>
+      <div>
+        <label htmlFor="r-time" className={labelCls}>Horário</label>
+        <input id="r-time" type="time" step="1800" {...register('startTime')} className={inputCls} />
+        {errors.startTime && <p role="alert" className="mt-1 text-xs text-red-500">{errors.startTime.message}</p>}
+      </div>
+
+      {/* Frequency */}
+      <div>
+        <label htmlFor="r-freq" className={labelCls}>Frequência</label>
+        <select id="r-freq" {...register('frequency')} className={inputCls}>
+          {(Object.keys(FREQ_LABELS) as RecurringFrequency[]).map((f) => (
+            <option key={f} value={f}>{FREQ_LABELS[f]}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Occurrences */}
+      <div>
+        <label htmlFor="r-occ" className={labelCls}>Nº de ocorrências (máx 52)</label>
+        <input id="r-occ" type="number" min="1" max="52" {...register('occurrences')} className={inputCls} />
+        {errors.occurrences && <p role="alert" className="mt-1 text-xs text-red-500">{errors.occurrences.message}</p>}
       </div>
 
       {/* Payment method */}

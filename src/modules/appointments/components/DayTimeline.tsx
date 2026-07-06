@@ -7,8 +7,8 @@ import { getWaTemplate, buildWaMessage, buildWaUrl } from '@/utils/whatsapp';
 import { storage } from '@/utils/storage';
 import type { Appointment } from '@/types/appointments.types';
 
-const START_HOUR = 6;
-const END_HOUR = 21;
+const START_HOUR = 5;
+const END_HOUR = 22;
 const HOUR_PX = 60;
 
 const APPT_BG: Record<string, string> = {
@@ -148,7 +148,7 @@ export function DayTimeline({
       </div>
 
       {/* Timeline — padding top/bottom para ver o primeiro e último horário */}
-      <div className="overflow-y-auto overflow-x-hidden" style={{ maxHeight: 480 }}>
+      <div className="overflow-y-auto overflow-x-hidden" style={{ maxHeight: 640 }}>
         <div style={{ paddingTop: 10, paddingBottom: 28 }}>
           <div className="relative flex" style={{ height: totalPx }}>
             {/* Hour labels */}
