@@ -11,12 +11,20 @@ const START_HOUR = 5;
 const END_HOUR = 22;
 const HOUR_PX = 60;
 
-const APPT_BG: Record<string, string> = {
-  PENDING: 'border-amber-300 text-amber-900',
-  CONFIRMED: 'border-ocean-tertiary-container text-ocean-primary',
-  COMPLETED: 'border-[#58a1dc] text-ocean-tertiary',
-  CANCELLED: 'border-ocean-outline-variant text-ocean-secondary',
-  NO_SHOW: 'border-red-300 text-red-700',
+const APPT_BORDER: Record<string, string> = {
+  PENDING: 'border-amber-300',
+  CONFIRMED: 'border-ocean-tertiary-container',
+  COMPLETED: 'border-[#58a1dc]',
+  CANCELLED: 'border-ocean-outline-variant',
+  NO_SHOW: 'border-red-300',
+};
+
+const APPT_TEXT: Record<string, string> = {
+  PENDING: 'text-amber-900',
+  CONFIRMED: 'text-ocean-primary',
+  COMPLETED: 'text-ocean-tertiary',
+  CANCELLED: 'text-ocean-secondary',
+  NO_SHOW: 'text-red-700',
 };
 
 const APPT_BG_SOLID: Record<string, string> = {
@@ -26,6 +34,13 @@ const APPT_BG_SOLID: Record<string, string> = {
   CANCELLED: 'rgba(190,200,210,0.20)',
   NO_SHOW: 'rgba(239,68,68,0.08)',
 };
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function buildApptWaUrl(appt: Appointment, dateStr: string): string {
   const businessId = storage.getBusinessId() ?? '';
@@ -119,6 +134,7 @@ export function DayTimeline({
   const menuAppt = menu ? appointments.find((a) => a.id === menu.apptId) ?? null : null;
 
   return (
+    <>
     <div className="glass-card rounded-2xl overflow-hidden">
       {/* Day header */}
       <div className="px-5 py-3.5 border-b border-ocean-outline-variant/25 flex items-start justify-between">
@@ -192,8 +208,16 @@ export function DayTimeline({
               {appointments.map((appt) => {
                 const top = topPx(appt.scheduledAt);
                 const height = heightPx(appt.durationMinutes);
-                const borderCls = APPT_BG[appt.status] ?? APPT_BG.PENDING;
-                const bgColor = APPT_BG_SOLID[appt.status] ?? APPT_BG_SOLID.PENDING;
+                const serviceColor = appt.service?.color ?? null;
+                const borderCls = serviceColor
+                  ? ''
+                  : (APPT_BORDER[appt.status] ?? APPT_BORDER.PENDING);
+                const textCls = APPT_TEXT[appt.status] ?? APPT_TEXT.PENDING;
+                const bgColor = serviceColor
+                  ? hexToRgba(serviceColor, 0.12)
+                  : (APPT_BG_SOLID[appt.status] ?? APPT_BG_SOLID.PENDING);
+                const blockStyle: React.CSSProperties = { top, height, background: bgColor };
+                if (serviceColor) blockStyle.borderColor = serviceColor;
                 const isFuture = new Date(appt.scheduledAt) > new Date();
                 const clientPhone = appt.client?.phone ?? null;
                 const hasActions =
@@ -209,8 +233,8 @@ export function DayTimeline({
                     title="Clique para editar"
                     onClick={() => onEdit(appt)}
                     onKeyDown={(e) => e.key === 'Enter' && onEdit(appt)}
-                    className={`absolute left-2 right-2 rounded-xl border px-2.5 py-2 z-10 cursor-pointer hover:brightness-95 transition-all ${borderCls}`}
-                    style={{ top, height, background: bgColor }}
+                    className={`absolute left-2 right-2 rounded-xl border px-2.5 py-2 z-10 cursor-pointer hover:brightness-95 transition-all ${borderCls} ${textCls}`}
+                    style={blockStyle}
                   >
                     <div className="flex items-start justify-between gap-1 min-w-0">
                       <div className="min-w-0 flex-1">
@@ -277,65 +301,67 @@ export function DayTimeline({
         </div>
       </div>
 
-      {/* Dropdown de ações — fixed para não ser cortado pelo overflow */}
-      {menu && menuAppt && (
-        <div
-          ref={menuRef}
-          style={{ position: 'fixed', top: menu.top, right: menu.right, zIndex: 9999 }}
-          className="min-w-40 rounded-xl bg-white shadow-lg border border-gray-200 py-1 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {menuAppt.status === 'PENDING' && (
+    </div>
+
+    {/* Dropdown fora do glass-card para evitar bug do backdrop-filter no iOS Safari */}
+    {menu && menuAppt && (
+      <div
+        ref={menuRef}
+        style={{ position: 'fixed', top: menu.top, right: menu.right, zIndex: 9999 }}
+        className="min-w-40 rounded-xl bg-white shadow-xl border border-gray-200 py-1 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {menuAppt.status === 'PENDING' && (
+          <button
+            className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-primary hover:bg-ocean-surface-container-low transition-colors"
+            onClick={() => { onConfirm(menuAppt); setMenu(null); }}
+          >
+            Confirmar
+          </button>
+        )}
+        {menuAppt.status === 'CONFIRMED' && (
+          <button
+            className="w-full text-left px-4 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50 transition-colors"
+            onClick={() => { onComplete(menuAppt); setMenu(null); }}
+          >
+            Concluir
+          </button>
+        )}
+        {(menuAppt.status === 'PENDING' || menuAppt.status === 'CONFIRMED') && (
+          <>
             <button
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-primary hover:bg-ocean-surface-container-low transition-colors"
-              onClick={() => { onConfirm(menuAppt); setMenu(null); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-on-surface hover:bg-ocean-surface-container-low transition-colors"
+              onClick={() => { onReschedule(menuAppt); setMenu(null); }}
             >
-              Confirmar
+              Reagendar
             </button>
-          )}
-          {menuAppt.status === 'CONFIRMED' && (
-            <button
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50 transition-colors"
-              onClick={() => { onComplete(menuAppt); setMenu(null); }}
-            >
-              Concluir
-            </button>
-          )}
-          {(menuAppt.status === 'PENDING' || menuAppt.status === 'CONFIRMED') && (
-            <>
+            {onAddService && (
               <button
                 className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-on-surface hover:bg-ocean-surface-container-low transition-colors"
-                onClick={() => { onReschedule(menuAppt); setMenu(null); }}
+                onClick={() => { onAddService(menuAppt); setMenu(null); }}
               >
-                Reagendar
+                + Serviço
               </button>
-              {onAddService && (
-                <button
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-on-surface hover:bg-ocean-surface-container-low transition-colors"
-                  onClick={() => { onAddService(menuAppt); setMenu(null); }}
-                >
-                  + Serviço
-                </button>
-              )}
-              <div className="my-1 border-t border-gray-100" />
-              <button
-                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                onClick={() => { onCancel(menuAppt); setMenu(null); }}
-              >
-                Cancelar
-              </button>
-            </>
-          )}
-          {onNoShow && (menuAppt.status === 'PENDING' || menuAppt.status === 'CONFIRMED' || menuAppt.status === 'COMPLETED') && (
+            )}
+            <div className="my-1 border-t border-gray-100" />
             <button
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
-              onClick={() => { onNoShow(menuAppt); setMenu(null); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              onClick={() => { onCancel(menuAppt); setMenu(null); }}
             >
-              Não Atendeu
+              Cancelar
             </button>
-          )}
-        </div>
-      )}
-    </div>
+          </>
+        )}
+        {onNoShow && (menuAppt.status === 'PENDING' || menuAppt.status === 'CONFIRMED' || menuAppt.status === 'COMPLETED') && (
+          <button
+            className="w-full text-left px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+            onClick={() => { onNoShow(menuAppt); setMenu(null); }}
+          >
+            Não Atendeu
+          </button>
+        )}
+      </div>
+    )}
+    </>
   );
 }

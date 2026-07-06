@@ -9,6 +9,7 @@ export function getByDate(
 ): Map<string, Appointment[]> {
   const map = new Map<string, Appointment[]>();
   for (const a of appointments) {
+    if (a.status === 'CANCELLED') continue;
     const d = new Date(a.scheduledAt);
     if (d.getFullYear() !== year || d.getMonth() !== month) continue;
     const key = toDateStr(d);
@@ -20,6 +21,6 @@ export function getByDate(
 /** Returns appointments on a given LOCAL date string (YYYY-MM-DD), sorted by time. */
 export function getDayAppointments(appointments: Appointment[], dateStr: string): Appointment[] {
   return appointments
-    .filter((a) => toDateStr(new Date(a.scheduledAt)) === dateStr)
+    .filter((a) => a.status !== 'CANCELLED' && toDateStr(new Date(a.scheduledAt)) === dateStr)
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 }

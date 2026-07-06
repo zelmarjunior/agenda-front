@@ -12,13 +12,14 @@ const schema = z.object({
   price: z.coerce.number().min(0, 'Valor deve ser positivo'),
   costPrice: z.coerce.number().min(0).optional(),
   durationMinutes: z.coerce.number().int().min(5, 'Mínimo 5 minutos'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface ServiceFormProps {
   initial?: Service;
-  onSubmit: (values: FormValues) => Promise<void>;
+  onSubmit: (values: Omit<FormValues, 'color'> & { color?: string }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -29,6 +30,7 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
@@ -39,9 +41,12 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
           price: initial.price,
           costPrice: initial.costPrice ?? undefined,
           durationMinutes: initial.durationMinutes,
+          color: initial.color ?? '#6366f1',
         }
-      : {},
+      : { color: '#6366f1' },
   });
+
+  const currentColor = watch('color') || '#6366f1';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -129,6 +134,29 @@ export function ServiceForm({ initial, onSubmit, onCancel }: ServiceFormProps): 
             {errors.durationMinutes.message}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+          Cor no calendário
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            id="color"
+            type="color"
+            {...register('color')}
+            className="h-10 w-14 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white"
+          />
+          <div
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono text-gray-700 flex items-center gap-2"
+          >
+            <span
+              className="inline-block h-4 w-4 rounded-full border border-gray-200 shrink-0"
+              style={{ background: currentColor }}
+            />
+            {currentColor.toUpperCase()}
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

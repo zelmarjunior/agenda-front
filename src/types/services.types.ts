@@ -5,6 +5,7 @@ export interface Service {
   price: number;
   costPrice: number | null;
   durationMinutes: number;
+  color: string | null;
   createdAt: string;
 }
 
@@ -14,6 +15,7 @@ export interface CreateServiceRequest {
   price: number;
   costPrice?: number;
   durationMinutes: number;
+  color?: string;
 }
 
 export interface ServiceProfessional {

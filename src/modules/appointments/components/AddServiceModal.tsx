@@ -71,12 +71,12 @@ export function AddServiceModal({ appointment, onClose, onConfirm }: AddServiceM
 
           {selectedSvc && (
             <div className="rounded-xl p-3 text-sm bg-green-50 border border-green-200 text-green-800">
-              <p className="font-semibold">Nova duração total</p>
+              <p className="font-semibold">Será criado um agendamento separado</p>
               <p className="text-xs mt-0.5">
-                {appointment.durationMinutes} + {selectedSvc.durationMinutes} = <strong>{appointment.durationMinutes + selectedSvc.durationMinutes} min</strong>
+                <strong>{selectedSvc.name}</strong> · {formatDuration(selectedSvc.durationMinutes)} · {formatCurrency(Number(selectedSvc.price))}
               </p>
-              <p className="text-xs mt-0.5">
-                Valor adicional: <strong>{formatCurrency(Number(selectedSvc.price))}</strong>
+              <p className="text-xs mt-1 text-green-700">
+                Mesmo cliente, profissional e horário — você pode cancelar cada um individualmente.
               </p>
             </div>
           )}

@@ -76,7 +76,7 @@ export function RescheduleForm({
         <input
           id="scheduledAt"
           type="datetime-local"
-          className="ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface"
+          className="ocean-input w-full px-4 py-2.5 text-sm text-ocean-on-surface appearance-none"
           {...register('scheduledAt')}
           aria-invalid={!!errors.scheduledAt}
         />

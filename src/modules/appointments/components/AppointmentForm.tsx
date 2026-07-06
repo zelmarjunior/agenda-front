@@ -606,84 +606,83 @@ export function AppointmentForm({
         </div>
       )}
 
-      {/* ── Date + Time ────────────────────────────────────────────────────── */}
-      <div className="space-y-5">
-        <div>
-          <label htmlFor="date" className={labelCls}>
-            Data
+      {/* ── Date ─────────────────────────────────────────────────────────────── */}
+      <div>
+        <label htmlFor="date" className={labelCls}>
+          Data
+        </label>
+        <input
+          id="date"
+          type="date"
+          {...register('date')}
+          className={`${inputCls} appearance-none`}
+          aria-invalid={!!errors.date}
+        />
+        {errors.date && (
+          <p role="alert" className="mt-1 text-xs text-red-500">
+            {errors.date.message}
+          </p>
+        )}
+      </div>
+
+      {/* ── Horário ──────────────────────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label htmlFor="time" className={labelCls + ' mb-0'}>
+            Horário
           </label>
-          <input
-            id="date"
-            type="date"
-            {...register('date')}
-            className={inputCls}
-            aria-invalid={!!errors.date}
-          />
-          {errors.date && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
-              {errors.date.message}
-            </p>
+          {slotsStatus === 'loading' && (
+            <span className="text-[10px] text-gray-400 animate-pulse">Verificando...</span>
           )}
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="time" className={labelCls + ' mb-0'}>
-              Horário
-            </label>
-            {slotsStatus === 'loading' && (
-              <span className="text-[10px] text-gray-400 animate-pulse">Verificando...</span>
-            )}
-            {slotsStatus === 'ok' && slotsData && (
-              <span className="text-[10px] text-emerald-600 font-medium">
-                {slotsData.length} disponível{slotsData.length !== 1 ? 'is' : ''}
-              </span>
-            )}
-            {slotsStatus === 'empty' && (
-              <span className="text-[10px] text-red-500 font-medium">Indisponível</span>
-            )}
-          </div>
-
-          <input
-            id="time"
-            type="time"
-            {...register('time')}
-            className={`${inputCls} ${slotsStatus === 'empty' ? 'border-amber-300 bg-amber-50/50' : ''}`}
-            aria-invalid={!!errors.time}
-            disabled={loadingSlots}
-          />
+          {slotsStatus === 'ok' && slotsData && (
+            <span className="text-[10px] text-emerald-600 font-medium">
+              {slotsData.length} disponível{slotsData.length !== 1 ? 'is' : ''}
+            </span>
+          )}
           {slotsStatus === 'empty' && (
-            <p className="mt-1 text-[10px] text-amber-600 font-medium">
-              Sem disponibilidade — confirme o horário manualmente
-            </p>
-          )}
-          {slotsStatus === 'ok' && availableTimeSlots.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {availableTimeSlots.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setValue('time', t, { shouldValidate: true });
-                  }}
-                  className={`rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors ${
-                    watch('time') === t
-                      ? 'bg-blue-500 border-blue-500 text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          )}
-          {errors.time && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
-              {errors.time.message}
-            </p>
+            <span className="text-[10px] text-red-500 font-medium">Indisponível</span>
           )}
         </div>
+
+        <input
+          id="time"
+          type="time"
+          {...register('time')}
+          className={`${inputCls} appearance-none ${slotsStatus === 'empty' ? 'border-amber-300 bg-amber-50/50' : ''}`}
+          aria-invalid={!!errors.time}
+          disabled={loadingSlots}
+        />
+        {slotsStatus === 'empty' && (
+          <p className="mt-1 text-[10px] text-amber-600 font-medium">
+            Sem disponibilidade — confirme o horário manualmente
+          </p>
+        )}
+        {slotsStatus === 'ok' && availableTimeSlots.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {availableTimeSlots.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setValue('time', t, { shouldValidate: true });
+                }}
+                className={`rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors ${
+                  watch('time') === t
+                    ? 'bg-blue-500 border-blue-500 text-white'
+                    : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+        {errors.time && (
+          <p role="alert" className="mt-1 text-xs text-red-500">
+            {errors.time.message}
+          </p>
+        )}
       </div>
 
       {/* ── Price ──────────────────────────────────────────────────────────── */}

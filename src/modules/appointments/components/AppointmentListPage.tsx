@@ -189,7 +189,7 @@ export function AppointmentListPage(): JSX.Element {
       values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string; extraServiceIds: string[] },
     ): Promise<void> => {
       try {
-        const created = await appointmentsService.create(businessId, {
+        await appointmentsService.create(businessId, {
           clientId: values.clientId,
           professionalId: values.professionalId,
           serviceId: values.serviceId,
@@ -198,7 +198,12 @@ export function AppointmentListPage(): JSX.Element {
           paymentMethod: values.paymentMethod || undefined,
         });
         for (const svcId of values.extraServiceIds) {
-          await appointmentsService.addService(businessId, created.id, svcId);
+          await appointmentsService.create(businessId, {
+            clientId: values.clientId,
+            professionalId: values.professionalId,
+            serviceId: svcId,
+            scheduledAt,
+          });
         }
         toast('Agendamento criado!', 'success');
         closeModal();
@@ -305,16 +310,23 @@ export function AppointmentListPage(): JSX.Element {
   );
 
   const handleAddService = useCallback(
-    async (appointmentId: string, serviceId: string): Promise<void> => {
+    async (_appointmentId: string, serviceId: string): Promise<void> => {
+      const appt = addServiceTarget;
+      if (!appt) return;
       try {
-        await appointmentsService.addService(businessId, appointmentId, serviceId);
-        toast('Serviço adicionado!', 'success');
+        await appointmentsService.create(businessId, {
+          clientId: appt.client.id,
+          professionalId: appt.professional.id,
+          serviceId,
+          scheduledAt: appt.scheduledAt,
+        });
+        toast('Serviço adicionado como novo agendamento!', 'success');
         mutate();
       } catch (err) {
         toast(getApiError(err), 'error');
       }
     },
-    [businessId, mutate, toast],
+    [businessId, addServiceTarget, mutate, toast],
   );
 
   const handleReschedule = useCallback(

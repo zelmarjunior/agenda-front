@@ -47,6 +47,7 @@ export function ServiceList(): JSX.Element {
     price: number;
     costPrice?: number;
     durationMinutes: number;
+    color?: string;
   }): Promise<void> {
     try {
       await servicesService.create(businessId, {
@@ -55,6 +56,7 @@ export function ServiceList(): JSX.Element {
         price: values.price,
         costPrice: values.costPrice || undefined,
         durationMinutes: values.durationMinutes,
+        color: values.color || undefined,
       });
       toast('Serviço cadastrado!', 'success');
       closeModal();
@@ -70,6 +72,7 @@ export function ServiceList(): JSX.Element {
     price: number;
     costPrice?: number;
     durationMinutes: number;
+    color?: string;
   }): Promise<void> {
     if (!selected) return;
     try {
@@ -79,6 +82,7 @@ export function ServiceList(): JSX.Element {
         price: values.price,
         costPrice: values.costPrice || undefined,
         durationMinutes: values.durationMinutes,
+        color: values.color || undefined,
       });
       toast('Serviço atualizado!', 'success');
       closeModal();
@@ -126,60 +130,41 @@ export function ServiceList(): JSX.Element {
         />
       ) : (
         <div className="glass-card rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-ocean-surface-container-low/50 border-b border-ocean-outline-variant/25">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Nome
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Duração
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Valor
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ocean-secondary uppercase tracking-wider">
-                  Custo
-                </th>
-                <th className="px-4 py-3 w-10" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ocean-outline-variant/15">
-              {services.map((s) => (
-                <tr
-                  key={s.id}
-                  className="hover:bg-ocean-surface-container-low/40 transition-colors"
+          <ul className="divide-y divide-ocean-outline-variant/15">
+            {services.map((s) => (
+              <li key={s.id} className="flex items-center gap-2 px-4 py-3 hover:bg-ocean-surface-container-low/40 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => openEdit(s)}
+                  className="flex-1 flex items-center gap-3 min-w-0 text-left focus:outline-none"
                 >
-                  <td className="px-4 py-3">
-                    <p className="font-semibold text-ocean-on-surface">{s.name}</p>
+                  <span
+                    className="shrink-0 h-3 w-3 rounded-full border border-white/20"
+                    style={{ background: s.color ?? '#94a3b8' }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-ocean-on-surface truncate">{s.name}</p>
                     {s.description && (
-                      <p className="text-xs text-ocean-secondary mt-0.5">{s.description}</p>
+                      <p className="text-xs text-ocean-secondary truncate">{s.description}</p>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-ocean-on-surface-variant">
-                    {formatDuration(s.durationMinutes)}
-                  </td>
-                  <td className="px-4 py-3 text-ocean-on-surface font-semibold">
-                    {formatCurrency(s.price)}
-                  </td>
-                  <td className="px-4 py-3 text-ocean-on-surface-variant text-sm">
-                    {s.costPrice ? formatCurrency(s.costPrice) : <span className="text-ocean-outline">—</span>}
-                  </td>
-                  <td className="px-2 py-3">
-                    <div className="flex justify-end">
-                      <DropdownMenu
-                        items={[
-                          { label: 'Profissionais', onClick: () => setProfsTarget(s) },
-                          { label: 'Editar', onClick: () => openEdit(s) },
-                          { label: 'Excluir', onClick: () => setConfirmDelete(s), variant: 'danger' },
-                        ]}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2 text-xs text-ocean-secondary">
+                    <span>{formatDuration(s.durationMinutes)}</span>
+                    <span className="font-semibold text-ocean-on-surface">{formatCurrency(s.price)}</span>
+                  </div>
+                </button>
+                <div className="shrink-0">
+                  <DropdownMenu
+                    items={[
+                      { label: 'Profissionais', onClick: () => setProfsTarget(s) },
+                      { label: 'Editar', onClick: () => openEdit(s) },
+                      { label: 'Excluir', onClick: () => setConfirmDelete(s), variant: 'danger' },
+                    ]}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
           <Pagination page={page} total={total} limit={LIMIT} onPageChange={setPage} />
         </div>
       )}

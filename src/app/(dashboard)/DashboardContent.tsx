@@ -49,6 +49,7 @@ export function DashboardContent(): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const router = useRouter();
   const { toast } = useToast();
+  const soloMode = storage.getSoloMode();
 
   const [mounted, setMounted] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -230,7 +231,7 @@ export function DashboardContent(): JSX.Element {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 mb-8">
-        {stats.map((s) => (
+        {(soloMode ? stats.filter((s) => s.label !== 'Profissionais') : stats).map((s) => (
           <div
             key={s.label}
             className="glass-card glass-card-hover rounded-2xl p-4 flex flex-col gap-2"
