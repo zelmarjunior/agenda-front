@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getApiError } from '@/services/api';
+import { EyeIcon } from '@/components/ui/EyeIcon';
 
 const schema = z
   .object({
@@ -63,6 +65,7 @@ export function RegisterForm(): JSX.Element {
   });
 
   const soloMode = useWatch({ control, name: 'soloMode' });
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(values: FormValues): Promise<void> {
     try {
@@ -188,9 +191,20 @@ export function RegisterForm(): JSX.Element {
         </Field>
 
         <Field id="password" label="Senha" error={errors.password?.message}>
-          <input id="password" type="password" autoComplete="new-password" className={inputCls}
-            placeholder="Mínimo 8 caracteres" {...register('password')}
-            aria-invalid={!!errors.password} />
+          <div className="relative">
+            <input id="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" className={`${inputCls} pr-11`}
+              placeholder="Mínimo 8 caracteres" {...register('password')}
+              aria-invalid={!!errors.password} />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-ocean-secondary hover:text-ocean-on-surface focus:outline-none"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              tabIndex={-1}
+            >
+              <EyeIcon open={showPassword} className="h-5 w-5" />
+            </button>
+          </div>
         </Field>
 
         <button

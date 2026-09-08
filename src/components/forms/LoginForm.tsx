@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { storage } from '@/utils/storage';
 import { getApiError } from '@/services/api';
+import { EyeIcon } from '@/components/ui/EyeIcon';
 
 function isValidEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -19,6 +20,7 @@ export function LoginForm(): JSX.Element {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function handleContinuar() {
     if (!isValidEmail(email)) {
@@ -167,16 +169,27 @@ export function LoginForm(): JSX.Element {
             <label htmlFor="password" className="block text-sm font-semibold text-ocean-on-surface-variant mb-1.5">
               Senha
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              autoFocus
-              className={inputCls}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                autoFocus
+                className={`${inputCls} pr-11`}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-ocean-secondary hover:text-ocean-on-surface focus:outline-none"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                tabIndex={-1}
+              >
+                <EyeIcon open={showPassword} className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           <button
             type="submit"

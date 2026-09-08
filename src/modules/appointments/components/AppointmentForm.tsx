@@ -46,6 +46,7 @@ interface AppointmentFormProps {
   initial?: Appointment;
   prefilledDatetime?: string;
   onSubmit: (scheduledAt: string, values: Omit<FormValues, 'date' | 'time'> & { extraServiceIds: string[] }) => Promise<void>;
+  onRemoveExtraService?: (extraServiceId: string) => Promise<void>;
   onCancel: () => void;
   onOpenRecurring?: (clientId: string) => void;
 }
@@ -67,6 +68,7 @@ export function AppointmentForm({
   initial,
   prefilledDatetime,
   onSubmit,
+  onRemoveExtraService,
   onCancel,
   onOpenRecurring,
 }: AppointmentFormProps): JSX.Element {
@@ -107,6 +109,17 @@ export function AppointmentForm({
   });
 
   const [extraServiceIds, setExtraServiceIds] = useState<string[]>([]);
+  const [removingExtraId, setRemovingExtraId] = useState<string | null>(null);
+
+  async function handleRemoveExtra(extraServiceId: string): Promise<void> {
+    if (!onRemoveExtraService) return;
+    setRemovingExtraId(extraServiceId);
+    try {
+      await onRemoveExtraService(extraServiceId);
+    } finally {
+      setRemovingExtraId(null);
+    }
+  }
   const [extraClients, setExtraClients] = useState<Client[]>([]);
   const [showNewClient, setShowNewClient] = useState(false);
   const [newName, setNewName] = useState('');
@@ -556,6 +569,50 @@ export function AppointmentForm({
           </p>
         )}
       </div>
+
+      {/* ── Serviços deste atendimento (edição) ─────────────────────────── */}
+      {initial && (
+        <div>
+          <label className={labelCls}>Serviços deste atendimento</label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <span className="font-medium text-gray-900">{initial.service?.name}</span>
+                <span className="text-xs text-gray-400 ml-2">
+                  {initial.service?.durationMinutes}min · R$ {Number(initial.service?.price ?? 0).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 shrink-0 ml-2">
+                Principal
+              </span>
+            </div>
+
+            {(initial.extraServices ?? []).map((extra) => (
+              <div
+                key={extra.id}
+                className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <span className="font-medium text-gray-900">{extra.service?.name}</span>
+                  <span className="text-xs text-gray-400 ml-2">
+                    {extra.durationMinutes}min · R$ {Number(extra.price).toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={removingExtraId === extra.id}
+                  onClick={() => handleRemoveExtra(extra.id)}
+                  className="shrink-0 ml-2 text-red-400 hover:text-red-600 disabled:opacity-50 focus:outline-none"
+                  aria-label={`Remover ${extra.service?.name}`}
+                  title="Remover serviço"
+                >
+                  {removingExtraId === extra.id ? '...' : '✕'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Extra services (criação apenas) ──────────────────────────────── */}
       {!initial && (

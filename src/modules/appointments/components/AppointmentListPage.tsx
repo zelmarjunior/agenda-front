@@ -189,7 +189,7 @@ export function AppointmentListPage(): JSX.Element {
       values: { clientId: string; professionalId: string; serviceId: string; finalPrice?: string; paymentMethod?: string; extraServiceIds: string[] },
     ): Promise<void> => {
       try {
-        await appointmentsService.create(businessId, {
+        const created = await appointmentsService.create(businessId, {
           clientId: values.clientId,
           professionalId: values.professionalId,
           serviceId: values.serviceId,
@@ -198,12 +198,7 @@ export function AppointmentListPage(): JSX.Element {
           paymentMethod: values.paymentMethod || undefined,
         });
         for (const svcId of values.extraServiceIds) {
-          await appointmentsService.create(businessId, {
-            clientId: values.clientId,
-            professionalId: values.professionalId,
-            serviceId: svcId,
-            scheduledAt,
-          });
+          await appointmentsService.addService(businessId, created.id, svcId);
         }
         toast('Agendamento criado!', 'success');
         closeModal();
@@ -228,6 +223,21 @@ export function AppointmentListPage(): JSX.Element {
         });
         toast('Agendamento atualizado!', 'success');
         closeModal();
+        mutate();
+      } catch (err) {
+        toast(getApiError(err), 'error');
+      }
+    },
+    [businessId, editTarget, mutate, toast],
+  );
+
+  const handleRemoveExtraService = useCallback(
+    async (extraServiceId: string): Promise<void> => {
+      if (!editTarget) return;
+      try {
+        const updated = await appointmentsService.removeExtraService(businessId, editTarget.id, extraServiceId);
+        setEditTarget(updated);
+        toast('Serviço removido do agendamento.', 'success');
         mutate();
       } catch (err) {
         toast(getApiError(err), 'error');
@@ -309,21 +319,44 @@ export function AppointmentListPage(): JSX.Element {
     [businessId, noShowTarget, mutate, toast],
   );
 
-  const handleAddService = useCallback(
-    async (_appointmentId: string, serviceId: string): Promise<void> => {
-      const appt = addServiceTarget;
-      if (!appt) return;
+  const handleRevertNoShow = useCallback(
+    async (appt: Appointment): Promise<void> => {
       try {
-        await appointmentsService.create(businessId, {
-          clientId: appt.client.id,
-          professionalId: appt.professional.id,
-          serviceId,
-          scheduledAt: appt.scheduledAt,
-        });
-        toast('Serviço adicionado como novo agendamento!', 'success');
+        await appointmentsService.revertNoShow(businessId, appt.id);
+        toast('Agendamento revertido para confirmado.', 'success');
         mutate();
       } catch (err) {
         toast(getApiError(err), 'error');
+      }
+    },
+    [businessId, mutate, toast],
+  );
+
+  const handleAddService = useCallback(
+    async (appointmentId: string, serviceId: string): Promise<void> => {
+      // Erros (ex: conflito de horário) são exibidos inline pelo próprio AddServiceModal.
+      await appointmentsService.addService(businessId, appointmentId, serviceId);
+      toast('Serviço adicionado ao agendamento!', 'success');
+      mutate();
+    },
+    [businessId, mutate, toast],
+  );
+
+  const handleAddServiceSeparate = useCallback(
+    async (serviceId: string, scheduledAtIso: string): Promise<void> => {
+      if (!addServiceTarget) return;
+      try {
+        await appointmentsService.create(businessId, {
+          clientId: addServiceTarget.client.id,
+          professionalId: addServiceTarget.professional.id,
+          serviceId,
+          scheduledAt: scheduledAtIso,
+        });
+        toast('Serviço agendado em novo horário!', 'success');
+        mutate();
+      } catch (err) {
+        toast(getApiError(err), 'error');
+        throw err;
       }
     },
     [businessId, addServiceTarget, mutate, toast],
@@ -470,6 +503,7 @@ export function AppointmentListPage(): JSX.Element {
                 onViewClient={setProfileClientId}
                 onAddService={setAddServiceTarget}
                 onNoShow={openNoShow}
+                onRevertNoShow={handleRevertNoShow}
               />
             )}
 
@@ -483,6 +517,7 @@ export function AppointmentListPage(): JSX.Element {
                 onReschedule={openReschedule}
                 onViewClient={setProfileClientId}
                 onNoShow={openNoShow}
+                onRevertNoShow={handleRevertNoShow}
                 onAddService={setAddServiceTarget}
                 onNewAppointment={() => openCreate()}
               />
@@ -505,6 +540,7 @@ export function AppointmentListPage(): JSX.Element {
           <AppointmentForm
             initial={editTarget}
             onSubmit={handleEdit}
+            onRemoveExtraService={handleRemoveExtraService}
             onCancel={closeModal}
             onOpenRecurring={openRecurringFromModal}
           />
@@ -529,6 +565,7 @@ export function AppointmentListPage(): JSX.Element {
         appointment={addServiceTarget}
         onClose={() => setAddServiceTarget(null)}
         onConfirm={handleAddService}
+        onConfirmSeparate={handleAddServiceSeparate}
       />
 
       <Modal open={modal === 'noshow'} onClose={closeModal} title="Não Atendido" size="sm">

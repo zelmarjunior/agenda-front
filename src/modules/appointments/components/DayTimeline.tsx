@@ -9,7 +9,7 @@ import type { Appointment } from '@/types/appointments.types';
 
 const START_HOUR = 5;
 const END_HOUR = 22;
-const HOUR_PX = 60;
+const HOUR_PX = 76;
 
 const APPT_BORDER: Record<string, string> = {
   PENDING: 'border-amber-300',
@@ -68,6 +68,7 @@ interface DayTimelineProps {
   onViewClient: (clientId: string) => void;
   onAddService?: (appt: Appointment) => void;
   onNoShow?: (appt: Appointment) => void;
+  onRevertNoShow?: (appt: Appointment) => void;
 }
 
 function topPx(scheduledAt: string): number {
@@ -76,7 +77,7 @@ function topPx(scheduledAt: string): number {
 }
 
 function heightPx(durationMinutes: number): number {
-  return Math.max(durationMinutes * (HOUR_PX / 60), HOUR_PX * 0.6);
+  return Math.max(durationMinutes * (HOUR_PX / 60), 64);
 }
 
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
@@ -99,6 +100,7 @@ export function DayTimeline({
   onViewClient,
   onAddService,
   onNoShow,
+  onRevertNoShow,
 }: DayTimelineProps): JSX.Element {
   const totalPx = (END_HOUR - START_HOUR) * HOUR_PX;
   const [menu, setMenu] = useState<MenuState | null>(null);
@@ -223,7 +225,8 @@ export function DayTimeline({
                 const hasActions =
                   appt.status === 'PENDING' ||
                   appt.status === 'CONFIRMED' ||
-                  (appt.status === 'COMPLETED' && !!onNoShow);
+                  (appt.status === 'COMPLETED' && !!onNoShow) ||
+                  (appt.status === 'NO_SHOW' && !!onRevertNoShow);
 
                 return (
                   <div
@@ -358,6 +361,14 @@ export function DayTimeline({
             onClick={() => { onNoShow(menuAppt); setMenu(null); }}
           >
             Não Atendeu
+          </button>
+        )}
+        {onRevertNoShow && menuAppt.status === 'NO_SHOW' && (
+          <button
+            className="w-full text-left px-4 py-2.5 text-sm font-medium text-ocean-primary hover:bg-ocean-surface-container-low transition-colors"
+            onClick={() => { onRevertNoShow(menuAppt); setMenu(null); }}
+          >
+            Reverter não atendido
           </button>
         )}
       </div>

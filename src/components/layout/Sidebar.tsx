@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import useSWR from 'swr';
@@ -9,14 +8,14 @@ import { storage } from '@/utils/storage';
 import { api } from '@/services/api';
 import type { SuccessResponse, PaginatedResponse } from '@/types/api.types';
 
-interface NavItem {
+export interface NavItem {
   href: string;
   label: string;
   icon: JSX.Element;
   badgeKey?: 'appointments' | 'inventory';
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
     label: 'Dashboard',
@@ -167,7 +166,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-function useSidebarCounts() {
+export function useSidebarCounts() {
   const businessId = storage.getBusinessId();
   const today = new Date().toISOString().split('T')[0];
 
@@ -202,166 +201,112 @@ function useSidebarCounts() {
 export function Sidebar(): JSX.Element {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
   const counts = useSidebarCounts();
 
   return (
-    <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setIsOpen(true)}
-        aria-label="Abrir menu"
-        className="fixed top-3 left-3 z-50 flex items-center justify-center w-9 h-9 rounded-xl glass-card shadow-sm lg:hidden"
-      >
-        <svg
-          className="h-5 w-5"
-          style={{ color: '#0D0B1A' }}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar panel */}
-      <aside
-        style={{ backgroundColor: '#120F22' }}
-        className={`fixed inset-y-0 left-0 z-60 w-64 flex flex-col h-screen transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 border-r border-white/10 shadow-2xl ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
-        {/* Brand header */}
-        <div className="px-5 py-5 flex items-center justify-between border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
-              style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
-            >
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 3l14 9-14 9V3z"
-                />
-              </svg>
-            </div>
-            <div>
-              <span
-                className="text-base font-bold tracking-tight"
-                style={{
-                  fontFamily: 'var(--font-bebas), sans-serif',
-                  fontSize: '1.4rem',
-                  letterSpacing: '0.08em',
-                  background: 'linear-gradient(135deg, #A0AAFF 0%, #E85FC0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                GLOWSY
-              </span>
-              <p
-                className="text-[10px] font-medium tracking-widest uppercase"
-                style={{ color: '#A0AAFF' }}
-              >
-                Studio
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            aria-label="Fechar menu"
-            className="lg:hidden p-1.5 rounded-lg transition-colors focus:outline-none"
-            style={{ color: '#A0AAFF' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#A0AAFF')}
+    <aside
+      style={{ backgroundColor: '#120F22' }}
+      className="hidden lg:flex lg:sticky lg:top-0 w-64 flex-col h-screen border-r border-white/10 shadow-2xl"
+    >
+      {/* Brand header */}
+      <div className="px-5 py-5 flex items-center justify-between border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
+            style={{ background: 'linear-gradient(135deg, #5B6CF0 0%, #9B5FE0 50%, #E85FC0 100%)' }}
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav aria-label="Menu principal" className="flex-1 px-3 py-4 overflow-y-auto">
-          <ul role="list" className="space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive =
-                item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => setIsOpen(false)}
-                    className={`ocean-sidebar-item ${isActive ? 'ocean-sidebar-item-active' : 'ocean-sidebar-item-inactive'} focus:outline-none`}
-                    style={
-                      isActive
-                        ? { color: '#ffffff', borderLeftColor: '#9B5FE0' }
-                        : undefined
-                    }
-                  >
-                    <span aria-hidden="true">{item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    {item.badgeKey && counts[item.badgeKey] > 0 && (
-                      <span
-                        className="ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none"
-                        style={{
-                          background:
-                            item.badgeKey === 'inventory'
-                              ? '#ef4444'
-                              : 'linear-gradient(135deg, #5B6CF0, #E85FC0)',
-                          color: '#fff',
-                        }}
-                      >
-                        {counts[item.badgeKey] > 99 ? '99+' : counts[item.badgeKey]}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-white/10">
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              logout();
-            }}
-            className="ocean-sidebar-item ocean-sidebar-item-inactive w-full focus:outline-none"
-          >
-            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={1.75}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                strokeWidth={2}
+                d="M5 3l14 9-14 9V3z"
               />
             </svg>
-            Sair
-          </button>
-{/*           <p
-            className="mt-4 px-3 text-[10px] font-medium tracking-widest uppercase"
-            style={{ color: 'rgba(160,170,255,0.35)' }}
-          >
-            v0.1.0
-          </p> */}
+          </div>
+          <div>
+            <span
+              className="text-base font-bold tracking-tight"
+              style={{
+                fontFamily: 'var(--font-bebas), sans-serif',
+                fontSize: '1.4rem',
+                letterSpacing: '0.08em',
+                background: 'linear-gradient(135deg, #A0AAFF 0%, #E85FC0 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              GLOWSY
+            </span>
+            <p
+              className="text-[10px] font-medium tracking-widest uppercase"
+              style={{ color: '#A0AAFF' }}
+            >
+              Studio
+            </p>
+          </div>
         </div>
-      </aside>
-    </>
+      </div>
+
+      {/* Navigation */}
+      <nav aria-label="Menu principal" className="flex-1 px-3 py-4 overflow-y-auto">
+        <ul role="list" className="space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const isActive =
+              item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`ocean-sidebar-item ${isActive ? 'ocean-sidebar-item-active' : 'ocean-sidebar-item-inactive'} focus:outline-none`}
+                  style={
+                    isActive
+                      ? { color: '#ffffff', borderLeftColor: '#9B5FE0' }
+                      : undefined
+                  }
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badgeKey && counts[item.badgeKey] > 0 && (
+                    <span
+                      className="ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none"
+                      style={{
+                        background:
+                          item.badgeKey === 'inventory'
+                            ? '#ef4444'
+                            : 'linear-gradient(135deg, #5B6CF0, #E85FC0)',
+                        color: '#fff',
+                      }}
+                    >
+                      {counts[item.badgeKey] > 99 ? '99+' : counts[item.badgeKey]}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="px-3 py-4 border-t border-white/10">
+        <button
+          onClick={logout}
+          className="ocean-sidebar-item ocean-sidebar-item-inactive w-full focus:outline-none"
+        >
+          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.75}
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+          Sair
+        </button>
+      </div>
+    </aside>
   );
 }

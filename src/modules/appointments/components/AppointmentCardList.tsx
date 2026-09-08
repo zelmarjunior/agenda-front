@@ -37,6 +37,7 @@ interface AppointmentCardListProps {
   onReschedule: (appt: Appointment) => void;
   onViewClient: (clientId: string) => void;
   onNoShow?: (appt: Appointment) => void;
+  onRevertNoShow?: (appt: Appointment) => void;
   onAddService?: (appt: Appointment) => void;
   onNewAppointment?: () => void;
 }
@@ -50,6 +51,7 @@ export function AppointmentCardList({
   onReschedule,
   onViewClient,
   onNoShow,
+  onRevertNoShow,
   onAddService,
   onNewAppointment,
 }: AppointmentCardListProps): JSX.Element {
@@ -153,6 +155,11 @@ export function AppointmentCardList({
               {onNoShow && (appt.status === 'PENDING' || appt.status === 'CONFIRMED' || appt.status === 'COMPLETED') && (
                 <button onClick={() => onNoShow(appt)} className={BTN_DANGER}>
                   Não Atendido
+                </button>
+              )}
+              {onRevertNoShow && appt.status === 'NO_SHOW' && (
+                <button onClick={() => onRevertNoShow(appt)} className={BTN_PRIMARY}>
+                  Reverter não atendido
                 </button>
               )}
               {onAddService && (appt.status === 'PENDING' || appt.status === 'CONFIRMED') && (

@@ -110,6 +110,10 @@ export const appointmentsService = {
     await api.patch(`/businesses/${businessId}/appointments/${appointmentId}/no-show`, { reason });
   },
 
+  async revertNoShow(businessId: string, appointmentId: string): Promise<void> {
+    await api.patch(`/businesses/${businessId}/appointments/${appointmentId}/revert-no-show`);
+  },
+
   async addService(
     businessId: string,
     appointmentId: string,
@@ -118,6 +122,17 @@ export const appointmentsService = {
     const response = await api.post<SuccessResponse<Appointment>>(
       `/businesses/${businessId}/appointments/${appointmentId}/add-service`,
       { serviceId },
+    );
+    return response.data.data;
+  },
+
+  async removeExtraService(
+    businessId: string,
+    appointmentId: string,
+    extraServiceId: string,
+  ): Promise<Appointment> {
+    const response = await api.delete<SuccessResponse<Appointment>>(
+      `/businesses/${businessId}/appointments/${appointmentId}/extra-services/${extraServiceId}`,
     );
     return response.data.data;
   },

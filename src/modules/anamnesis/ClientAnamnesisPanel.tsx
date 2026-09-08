@@ -5,7 +5,9 @@ import useSWR from 'swr';
 import { Spinner } from '@/components/common/Spinner';
 import { Button } from '@/components/common/Button';
 import { anamnesisService } from './anamnesisService';
+import { CreateAnamnesisTemplateModal } from './CreateAnamnesisTemplateModal';
 import { storage } from '@/utils/storage';
+import { decodeToken } from '@/utils/jwt';
 import { useToast } from '@/context/ToastContext';
 import { getApiError } from '@/services/api';
 import type { AnamnesisRecord, AnamnesisTemplate, SubmitAnswersRequest } from '@/types/anamnesis.types';
@@ -22,13 +24,16 @@ export function ClientAnamnesisPanel({ clientId }: ClientAnamnesisPanelProps): J
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+
+  const isOwner = decodeToken(storage.getToken() ?? '')?.roles?.includes('OWNER') ?? false;
 
   const { data: records, isLoading: loadingRecords, mutate } = useSWR(
     ['anamnesis-records', businessId, clientId],
     () => anamnesisService.listClientRecords(businessId, clientId),
   );
 
-  const { data: templates, isLoading: loadingTemplates } = useSWR(
+  const { data: templates, isLoading: loadingTemplates, mutate: mutateTemplates } = useSWR(
     ['anamnesis-templates', businessId],
     () => anamnesisService.listTemplates(businessId),
   );
@@ -188,6 +193,22 @@ export function ClientAnamnesisPanel({ clientId }: ClientAnamnesisPanelProps): J
         </Button>
       </div>
 
+      {isOwner && (
+        <button
+          type="button"
+          onClick={() => setShowCreateTemplate(true)}
+          className="text-xs font-semibold text-ocean-primary hover:underline"
+        >
+          + Criar novo template de anamnese
+        </button>
+      )}
+
+      {!templates?.length && !loadingTemplates && !isOwner && (
+        <p className="text-xs text-ocean-secondary">
+          Nenhum template cadastrado ainda. Peça para o responsável pelo negócio criar um em "Anamnese".
+        </p>
+      )}
+
       {/* Records list */}
       {!records?.length ? (
         <p className="text-sm text-ocean-secondary text-center py-4">Nenhuma ficha registrada.</p>
@@ -217,6 +238,15 @@ export function ClientAnamnesisPanel({ clientId }: ClientAnamnesisPanelProps): J
           })}
         </ul>
       )}
+
+      <CreateAnamnesisTemplateModal
+        open={showCreateTemplate}
+        onClose={() => setShowCreateTemplate(false)}
+        onCreated={(template) => {
+          mutateTemplates();
+          setSelectedTemplateId(template.id);
+        }}
+      />
     </div>
   );
 }

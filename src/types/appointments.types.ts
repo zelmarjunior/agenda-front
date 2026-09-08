@@ -4,6 +4,14 @@ import type { Service } from './services.types';
 
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 
+export interface AppointmentExtraService {
+  id: string;
+  serviceId: string;
+  price: number;
+  durationMinutes: number;
+  service?: Service;
+}
+
 export interface Appointment {
   id: string;
   client: Client;
@@ -17,6 +25,7 @@ export interface Appointment {
   cancellationReason: string | null;
   noShowReason: string | null;
   createdAt: string;
+  extraServices?: AppointmentExtraService[];
 }
 
 export interface CreateAppointmentRequest {

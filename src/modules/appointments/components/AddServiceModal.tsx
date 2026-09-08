@@ -1,24 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { servicesService } from '@/modules/services/services/servicesService';
+import { professionalsService } from '@/modules/professionals/services/professionalsService';
 import { storage } from '@/utils/storage';
-import { formatCurrency, formatDuration } from '@/utils/formatters';
+import { getApiError } from '@/services/api';
+import { formatCurrency, formatDuration, formatTime } from '@/utils/formatters';
+import { toDateStr } from '@/utils/calendar';
 import type { Appointment } from '@/types/appointments.types';
 
 interface AddServiceModalProps {
   appointment: Appointment | null;
   onClose: () => void;
   onConfirm: (appointmentId: string, serviceId: string) => Promise<void>;
+  onConfirmSeparate: (serviceId: string, scheduledAtIso: string) => Promise<void>;
 }
 
-export function AddServiceModal({ appointment, onClose, onConfirm }: AddServiceModalProps): JSX.Element {
+export function AddServiceModal({ appointment, onClose, onConfirm, onConfirmSeparate }: AddServiceModalProps): JSX.Element {
   const businessId = storage.getBusinessId()!;
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [schedulingSlot, setSchedulingSlot] = useState<string | null>(null);
+
+  useEffect(() => {
+    setConflictMessage(null);
+  }, [selectedServiceId]);
 
   const { data: svcData } = useSWR(
     appointment ? ['services-all', businessId] : null,
@@ -28,14 +38,44 @@ export function AddServiceModal({ appointment, onClose, onConfirm }: AddServiceM
 
   const selectedSvc = svcData?.data.find((s) => s.id === selectedServiceId);
 
+  const { data: slotsData, isLoading: loadingSlots } = useSWR(
+    conflictMessage && appointment
+      ? ['add-service-slots', businessId, appointment.professional.id, appointment.scheduledAt, selectedServiceId]
+      : null,
+    () =>
+      professionalsService.availableSlots(
+        businessId,
+        appointment!.professional.id,
+        toDateStr(new Date(appointment!.scheduledAt)),
+        selectedServiceId,
+      ),
+    { revalidateOnFocus: false },
+  );
+
   async function handleConfirm(): Promise<void> {
     if (!appointment || !selectedServiceId) return;
     setSubmitting(true);
+    setConflictMessage(null);
     try {
       await onConfirm(appointment.id, selectedServiceId);
       onClose();
+    } catch (err) {
+      setConflictMessage(getApiError(err));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleScheduleSlot(slotIso: string): Promise<void> {
+    if (!selectedServiceId) return;
+    setSchedulingSlot(slotIso);
+    try {
+      await onConfirmSeparate(selectedServiceId, slotIso);
+      onClose();
+    } catch {
+      /* erro já exibido via toast pelo chamador */
+    } finally {
+      setSchedulingSlot(null);
     }
   }
 
@@ -69,31 +109,63 @@ export function AddServiceModal({ appointment, onClose, onConfirm }: AddServiceM
             </select>
           </div>
 
-          {selectedSvc && (
+          {selectedSvc && !conflictMessage && (
             <div className="rounded-xl p-3 text-sm bg-green-50 border border-green-200 text-green-800">
-              <p className="font-semibold">Será criado um agendamento separado</p>
+              <p className="font-semibold">A duração do agendamento será estendida</p>
               <p className="text-xs mt-0.5">
-                <strong>{selectedSvc.name}</strong> · {formatDuration(selectedSvc.durationMinutes)} · {formatCurrency(Number(selectedSvc.price))}
+                <strong>{selectedSvc.name}</strong> · +{formatDuration(selectedSvc.durationMinutes)} · +{formatCurrency(Number(selectedSvc.price))}
               </p>
               <p className="text-xs mt-1 text-green-700">
-                Mesmo cliente, profissional e horário — você pode cancelar cada um individualmente.
+                Novo total: {appointment.durationMinutes + selectedSvc.durationMinutes} min, no mesmo horário.
               </p>
+            </div>
+          )}
+
+          {conflictMessage && (
+            <div className="rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900">
+              <p className="font-semibold">{conflictMessage}</p>
+              <p className="text-xs mt-1">
+                Não é possível estender esse horário porque já há outro compromisso logo em seguida. Escolha um horário livre para agendar <strong>{selectedSvc?.name}</strong> separadamente:
+              </p>
+
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {loadingSlots && (
+                  <span className="text-xs text-amber-700">Carregando horários disponíveis...</span>
+                )}
+                {!loadingSlots && slotsData?.length === 0 && (
+                  <span className="text-xs text-amber-700">Nenhum horário livre nesse dia para esse serviço.</span>
+                )}
+                {!loadingSlots &&
+                  slotsData?.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      disabled={schedulingSlot === slot}
+                      onClick={() => handleScheduleSlot(slot)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                    >
+                      {schedulingSlot === slot ? '...' : formatTime(slot)}
+                    </button>
+                  ))}
+              </div>
             </div>
           )}
 
           <div className="flex justify-end gap-3 pt-1 border-t border-gray-100">
             <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-              Cancelar
+              {conflictMessage ? 'Fechar' : 'Cancelar'}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              loading={submitting}
-              disabled={!selectedServiceId}
-              onClick={handleConfirm}
-            >
-              Adicionar serviço
-            </Button>
+            {!conflictMessage && (
+              <Button
+                type="button"
+                size="sm"
+                loading={submitting}
+                disabled={!selectedServiceId}
+                onClick={handleConfirm}
+              >
+                Adicionar serviço
+              </Button>
+            )}
           </div>
         </div>
       )}
